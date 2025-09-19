@@ -9,7 +9,7 @@ EOGS eogs = EOGS(EOGS_HAL,screenWidth,screenHeight);
 
 void setup() {
   u8g2.begin();
-  eogs.create<EOGSLabelContainer>(0,40,20,50,false,"This is a very simple embedded OLED UI System");
+  EOGSLabel *label = eogs.create<EOGSLabel>(0,40,20,50,false,"This is a very simple embedded OLED UI System");
   label -> setFont(u8g2_font_t0_11_tf)
         -> setHAlign(HAlign::LEFT)
         -> setVAlign(VAlign::TOP)
