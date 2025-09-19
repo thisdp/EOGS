@@ -1,0 +1,127 @@
+#######################################
+# Syntax Coloring Map For EOGS
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+EOGS	KEYWORD1
+EOGS_HAL	KEYWORD1
+EOGSWidgetBase	KEYWORD1
+EOGSScreen	KEYWORD1
+EOGSLabel	KEYWORD1
+EOGSLabelContainer	KEYWORD1
+EOGSRectangle	KEYWORD1
+EOGSRectangleContainer	KEYWORD1
+EOGSCircle	KEYWORD1
+EOGSAnim	KEYWORD1
+EOGSAnimMove	KEYWORD1
+EOGSEasing	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+render	KEYWORD2
+clear	KEYWORD2
+getHAL	KEYWORD2
+setDrawColor	KEYWORD2
+drawPixel	KEYWORD2
+drawText	KEYWORD2
+drawTextUTF8	KEYWORD2
+drawVDottedLine	KEYWORD2
+drawHDottedLine	KEYWORD2
+drawVLine	KEYWORD2
+drawHLine	KEYWORD2
+drawFrame	KEYWORD2
+drawBox	KEYWORD2
+drawRFrame	KEYWORD2
+drawRBox	KEYWORD2
+drawCircle	KEYWORD2
+drawDisc	KEYWORD2
+setFont	KEYWORD2
+getFontWidth	KEYWORD2
+getFontHeight	KEYWORD2
+updateAnimations	KEYWORD2
+addChild	KEYWORD2
+removeChild	KEYWORD2
+setPosition	KEYWORD2
+setSize	KEYWORD2
+setParent	KEYWORD2
+setVisible	KEYWORD2
+setDrawColor	KEYWORD2
+requestDimensionUpdate	KEYWORD2
+getX	KEYWORD2
+getY	KEYWORD2
+getW	KEYWORD2
+getH	KEYWORD2
+getRelX	KEYWORD2
+getRelY	KEYWORD2
+getRelW	KEYWORD2
+getRelH	KEYWORD2
+getAbsX	KEYWORD2
+getAbsY	KEYWORD2
+getAbsW	KEYWORD2
+getAbsH	KEYWORD2
+getRenderX	KEYWORD2
+getRenderY	KEYWORD2
+isXRelative	KEYWORD2
+isYRelative	KEYWORD2
+isWRelative	KEYWORD2
+isHRelative	KEYWORD2
+getParent	KEYWORD2
+isVisible	KEYWORD2
+setText	KEYWORD2
+getText	KEYWORD2
+setHAlign	KEYWORD2
+setVAlign	KEYWORD2
+getHAlign	KEYWORD2
+getVAlign	KEYWORD2
+setFilled	KEYWORD2
+isFilled	KEYWORD2
+setRadius	KEYWORD2
+getRadius	KEYWORD2
+setRoundCornerRadius	KEYWORD2
+getRoundCornerRadius	KEYWORD2
+update	KEYWORD2
+calculateProgress	KEYWORD2
+start	KEYWORD2
+stop	KEYWORD2
+isRunning	KEYWORD2
+setDuration	KEYWORD2
+getDuration	KEYWORD2
+setLoop	KEYWORD2
+getLoop	KEYWORD2
+onUpdate	KEYWORD2
+setStartPosition	KEYWORD2
+Linear	KEYWORD2
+OutSine	KEYWORD2
+InSine	KEYWORD2
+InOutSine	KEYWORD2
+OutQuad	KEYWORD2
+InQuad	KEYWORD2
+InOutQuad	KEYWORD2
+OutBounce	KEYWORD2
+InBounce	KEYWORD2
+InOutBounce	KEYWORD2
+OutBack	KEYWORD2
+InBack	KEYWORD2
+InOutBack	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+DrawColor	LITERAL1
+HAlign	LITERAL1
+VAlign	LITERAL1
+WHITE	LITERAL1
+BLACK	LITERAL1
+INVERSE	LITERAL1
+LEFT	LITERAL1
+CENTER	LITERAL1
+RIGHT	LITERAL1
+TOP	LITERAL1
+MIDDLE	LITERAL1
+BOTTOM	LITERAL1

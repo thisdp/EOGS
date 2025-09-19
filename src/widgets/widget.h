@@ -1,0 +1,275 @@
+//
+// Created by thisdp 2025/8/20.
+//
+#pragma once
+
+#include <Arduino.h>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <stdexcept>
+#include "../EOGS_hal/EOGS_hal.h"
+#define mathClamp(x,min,max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
+
+// 前向声明
+class EOGS;
+class EOGSAnimBase;
+// 基础控件类基类
+class EOGSWidgetBase {
+protected:
+    EOGSWidgetBase* parent;  // 父级元素指针
+    float relX, relY, relW, relH;  // 相对坐标和大小
+    int16_t renderX, renderY;
+    int16_t x, y, w, h;  // 绝对坐标和大小
+    union{
+        uint32_t flags;
+        struct{
+            uint8_t isXRel : 1;
+            uint8_t isYRel : 1;
+            uint8_t isWRel : 1;
+            uint8_t isHRel : 1;
+            uint8_t dimensionUpdated : 1;
+            uint8_t renderPosUpdated : 1;
+            uint8_t insideOfRenderArea : 1;
+            uint8_t renderOutsideOfRenderArea: 1;
+            
+            uint8_t visible : 1;
+            uint8_t generalFlag1 : 1;
+            uint8_t generalFlag2 : 1;
+            uint8_t generalFlag3 : 1;
+            uint8_t generalFlag4 : 1;
+            uint8_t generalFlag5 : 1;
+            uint8_t generalFlag6 : 1;
+            uint8_t generalFlag7 : 1;
+
+            uint8_t generalFlag8 : 1;
+            uint8_t generalFlag9 : 1;
+            uint8_t generalFlag10 : 1;
+            uint8_t generalFlag11 : 1;
+            uint8_t generalFlag12 : 1;
+            uint8_t generalFlag13 : 1;
+            uint8_t generalFlag14 : 1;
+            uint8_t generalFlag15 : 1;
+            
+            uint8_t generalFlag16 : 1;
+            uint8_t generalFlag17 : 1;
+            uint8_t generalFlag18 : 1;
+            uint8_t generalFlag19 : 1;
+            uint8_t generalFlag20 : 1;
+            uint8_t generalFlag21 : 1;
+            uint8_t generalFlag22 : 1;
+            uint8_t generalFlag23 : 1;
+
+        };
+        struct{
+            uint8_t : 8;
+
+            uint8_t : 2;
+            DrawColor generalColor2 : 2;
+            DrawColor generalColor4 : 2;
+            DrawColor generalColor6 : 2;
+            
+            DrawColor generalColor8 : 2;
+            DrawColor generalColor10 : 2;
+            DrawColor generalColor12 : 2;
+            DrawColor generalColor14 : 2;
+            
+            DrawColor generalColor16 : 2;
+            DrawColor generalColor18 : 2;
+            DrawColor generalColor20 : 2;
+            DrawColor generalColor22 : 2;
+        };
+        struct{
+            uint8_t : 8;
+            
+            uint8_t : 2;
+            HAlign generalHAlign2 : 2;
+            HAlign generalHAlign4 : 2;
+            HAlign generalHAlign6 : 2;
+            
+            HAlign generalHAlign8 : 2;
+            HAlign generalHAlign10 : 2;
+            HAlign generalHAlign12 : 2;
+            HAlign generalHAlign14 : 2;
+            
+            HAlign generalHAlign16 : 2;
+            HAlign generalHAlign18 : 2;
+            HAlign generalHAlign20 : 2;
+            HAlign generalHAlign22 : 2;
+        };
+        struct{
+            uint8_t : 8;
+            
+            uint8_t : 2;
+            VAlign generalVAlign2 : 2;
+            VAlign generalVAlign4 : 2;
+            VAlign generalVAlign6 : 2;
+            
+            VAlign generalVAlign8 : 2;
+            VAlign generalVAlign10 : 2;
+            VAlign generalVAlign12 : 2;
+            VAlign generalVAlign14 : 2;
+            
+            VAlign generalVAlign16 : 2;
+            VAlign generalVAlign18 : 2;
+            VAlign generalVAlign20 : 2;
+            VAlign generalVAlign22 : 2;
+        };
+        struct{
+            uint8_t : 8;
+            
+            uint8_t : 2;
+            uint8_t generalAlign2 : 2;
+            uint8_t generalAlign4 : 2;
+            uint8_t generalAlign6 : 2;
+            
+            uint8_t generalAlign8 : 2;
+            uint8_t generalAlign10 : 2;
+            uint8_t generalAlign12 : 2;
+            uint8_t generalAlign14 : 2;
+            
+            uint8_t generalAlign16 : 2;
+            uint8_t generalAlign18 : 2;
+            uint8_t generalAlign20 : 2;
+            uint8_t generalAlign22 : 2;
+        };
+    };
+    
+
+public:
+    EOGSWidgetBase(float _x, float _y, float _w, float _h, bool _isRelative = false)
+        : parent(nullptr),
+        relX(_x), relY(_y), relW(_w), relH(_h),
+        renderX(0), renderY(0),
+        x(static_cast<int16_t>(_x)), y(static_cast<int16_t>(_y)), w(static_cast<int16_t>(_w)), h(static_cast<int16_t>(_h))
+    {
+        flags = 0;
+        isXRel = _isRelative;
+        isYRel = _isRelative;
+        isWRel = _isRelative;
+        isHRel = _isRelative;
+        visible = true;
+    }
+
+    virtual ~EOGSWidgetBase(){ if(parent != nullptr && parent->isContainer()) parent->removeChild(this); };
+    
+    // 新Class需要重载的
+public:
+    // 纯虚函数接口
+    virtual void render(EOGS* eogs, int16_t parentRX, int16_t parentRY, int16_t parentW, int16_t parentH) = 0;
+    virtual bool updateRenderPos(EOGS* eogs, int16_t parentRX, int16_t parentRY, int16_t parentW, int16_t parentH);   //计算渲染位置
+    virtual bool updateDimension(int16_t parentW, int16_t parentH);    // 仅计算Position/Size
+    virtual bool isContainer() const { return false; };
+    virtual std::vector<EOGSWidgetBase*>* getChildren() { return nullptr; }
+    
+    // Getter方法
+    float getX(bool relative = false) const { return relative ? getRelX() : getAbsX(); }
+    float getY(bool relative = false) const { return relative ? getRelY() : getAbsY(); }
+    float getW(bool relative = false) const { return relative ? getRelW() : getAbsW(); }
+    float getH(bool relative = false) const { return relative ? getRelH() : getAbsH(); }
+    virtual float getRelX() const { return relX; }
+    virtual float getRelY() const { return relY; }
+    virtual float getRelW() const { return relW; }
+    virtual float getRelH() const { return relH; }
+    virtual int16_t getAbsX() const { return x; }
+    virtual int16_t getAbsY() const { return y; }
+    virtual int16_t getAbsW() const { return w; }
+    virtual int16_t getAbsH() const { return h; }
+    virtual int16_t getRenderX() const { return renderX; }
+    virtual int16_t getRenderY() const { return renderY; }
+    virtual bool isXRelative() const { return isXRel; }
+    virtual bool isYRelative() const { return isYRel; }
+    virtual bool isWRelative() const { return isWRel; }
+    virtual bool isHRelative() const { return isHRel; }
+    virtual bool isVisible() const { return visible; }
+    virtual bool isInsideOfCanvas() const { return insideOfRenderArea; }
+    virtual bool getForceRenderOutsideOfCanvas() const { return renderOutsideOfRenderArea; }
+    virtual EOGSWidgetBase* getParent() const { return parent; }
+    virtual EOGS* getEOGS() { return parent != nullptr ? parent->getEOGS() : nullptr; }
+    virtual void requestDimensionUpdate(bool instant = false);
+    virtual void requestRenderPosUpdate(bool instant = false);
+    
+    void setPosition(float _x, float _y);
+    void setPosition(float _x, float _y, bool _isXRel, bool _isYRel);
+    void setPosition(float _x, float _y, bool _isXYRel);
+    void setX(float _x, bool _isRelative);
+    void setY(float _y, bool _isRelative);
+    void setSize(float _w, float _h);
+    void setSize(float _w, float _h, bool _isWRel, bool _isHRel);
+    void setSize(float _w, float _h, bool _isWHRel);
+    void setW(float _w, bool _isRelative);
+    void setH(float _h, bool _isRelative);
+    void setParent(EOGSWidgetBase* _parent, bool isUpdateChild = true);
+    void setVisible(bool _visible);
+    void setForceRenderOutsideOfCanvas(bool forceRenderOutsideOfCanvas);
+    void addChild(EOGSWidgetBase* child, bool isUpdateParent = true);
+    void removeChild(EOGSWidgetBase* child, bool isUpdateParent = true);
+    
+    // 交互方法
+    virtual void onPress(uint16_t continuousTimes = 1) {}
+    virtual void onRelease(uint16_t continuousTimes = 1) {}
+    virtual void onNavigate(bool increase, uint32_t continuousTime = 0) {}
+    virtual void onConfirm() {}
+    virtual void onLongPress() {}
+
+    // 新Class可能需要重载的
+protected:
+    virtual void renderChildren(EOGS* eogs, bool requestDimensionUpdate = false) {
+        std::vector<EOGSWidgetBase*>* children = getChildren();
+        if(children == nullptr) return;
+        for (auto child : *children){
+            if(child == nullptr) continue;
+            if (requestDimensionUpdate) child->requestDimensionUpdate();
+            if (child->isVisible()) child->render(eogs,renderX,renderY,w,h);
+        }
+    }
+    virtual bool isOutsideOfParent(int16_t parentW, int16_t parentH) {
+        return (x + w < 0) || (x > parentW) || (y + h < 0) || (y > parentH);
+    }
+
+    // 结束
+public:
+
+    // 模板方法，用于创建任何类型的Widget
+    template<typename WidgetType, typename... Args>
+    [[nodiscard]] WidgetType* create(Args&&... args) {
+        static_assert(std::is_base_of<EOGSWidgetBase, WidgetType>::value, "WidgetType must derive from EOGSWidgetBase");
+        WidgetType* newWidget = new WidgetType(std::forward<Args>(args)...);
+        if(newWidget != nullptr && isContainer()) addChild(newWidget);
+        return newWidget;
+    }
+    
+    template<typename AnimType, typename... Args>
+    [[nodiscard]] AnimType* createAnim(Args&&... args) {
+        static_assert(std::is_base_of<EOGSAnimBase, AnimType>::value, "AnimType must be a valid animation type");
+        AnimType* newAnim = new AnimType(static_cast<EOGSWidgetBase*>(this), std::forward<Args>(args)...);
+        if (newAnim != nullptr) addAnimToEOGS(newAnim);
+        return newAnim;
+    }
+    
+private:
+    // 辅助函数，用于将动画添加到EOGS实例中
+    void addAnimToEOGS(void* anim);
+};
+
+// 基础控件类模板（使用CRTP实现链式调用的协变返回）
+template<typename Derived>
+class EOGSWidget : public EOGSWidgetBase {
+public:
+    EOGSWidget(float _x, float _y, float _w, float _h, bool _isRelative) : EOGSWidgetBase(_x, _y, _w, _h, _isRelative) {}
+    virtual Derived* addChild(EOGSWidgetBase* child, bool isUpdateParent = true) { EOGSWidgetBase::addChild(child, isUpdateParent); return static_cast<Derived*>(this); }
+    virtual Derived* removeChild(EOGSWidgetBase* child, bool isUpdateParent = true) { EOGSWidgetBase::removeChild(child, isUpdateParent); return static_cast<Derived*>(this); }
+    virtual Derived* setPosition(float _x, float _y) { EOGSWidgetBase::setPosition(_x, _y); return static_cast<Derived*>(this); }
+    virtual Derived* setPosition(float _x, float _y, bool _isXRel, bool _isYRel) { EOGSWidgetBase::setPosition(_x, _y, _isXRel, _isYRel); return static_cast<Derived*>(this); }
+    virtual Derived* setPosition(float _x, float _y, bool _isXYRel) { EOGSWidgetBase::setPosition(_x, _y, _isXYRel); return static_cast<Derived*>(this); }
+    virtual Derived* setX(float _x, bool _isRelative) { EOGSWidgetBase::setX(_x, _isRelative); return static_cast<Derived*>(this); }
+    virtual Derived* setY(float _y, bool _isRelative) { EOGSWidgetBase::setY(_y, _isRelative); return static_cast<Derived*>(this); }
+    virtual Derived* setSize(float _w, float _h) { EOGSWidgetBase::setSize(_w, _h); return static_cast<Derived*>(this); }
+    virtual Derived* setSize(float _w, float _h, bool _isWRel, bool _isHRel) { EOGSWidgetBase::setSize(_w, _h, _isWRel, _isHRel); return static_cast<Derived*>(this); }
+    virtual Derived* setSize(float _w, float _h, bool _isWHRel) { EOGSWidgetBase::setSize(_w, _h, _isWHRel); return static_cast<Derived*>(this); }
+    virtual Derived* setW(float _w, bool _isRelative) { EOGSWidgetBase::setW(_w, _isRelative); return static_cast<Derived*>(this); }
+    virtual Derived* setH(float _h, bool _isRelative) { EOGSWidgetBase::setH(_h, _isRelative); return static_cast<Derived*>(this); }
+    virtual Derived* setParent(EOGSWidgetBase* _parent, bool isUpdateChild = true) { EOGSWidgetBase::setParent(_parent, isUpdateChild); return static_cast<Derived*>(this); }
+    virtual Derived* setVisible(bool _visible) { EOGSWidgetBase::setVisible(_visible); return static_cast<Derived*>(this); }
+    virtual Derived* setForceRenderOutsideOfCanvas(bool forceRenderOutsideOfCanvas) { EOGSWidgetBase::setForceRenderOutsideOfCanvas(forceRenderOutsideOfCanvas); return static_cast<Derived*>(this); }
+};
