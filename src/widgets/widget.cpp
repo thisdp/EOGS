@@ -70,6 +70,8 @@ void EOGSWidgetBase::setH(float _h, bool _isRel) {
 
 void EOGSWidgetBase::setParent(EOGSWidgetBase* _parent, bool isUpdateChild) {
     if (parent != _parent){
+        requestDimensionUpdate();   //重定向parent之后，需要重新计算尺寸
+        requestRenderPosUpdate();
         if(isUpdateChild && parent != nullptr && parent->isContainer()) parent->removeChild(this, false);    //移除
         if(_parent == nullptr){
             parent = _parent;
