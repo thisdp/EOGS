@@ -26,6 +26,7 @@ void EOGS::render() {
         lastFpsUpdate = currentTime;
     }
     if (currentTime - lastFrameTime >= targetFrameTime) {
+        if(preRender) preRender(this);
         hal->setFontPosTop();
         updateAnimations();
         hal->canvasClear();

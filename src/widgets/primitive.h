@@ -40,7 +40,7 @@ protected:
 
 public:
     // 构造函数
-    EOGSPrimitive(float _x, float _y, float _w, float _h, EOGSPrimitiveType _type = EOGSPrimitiveType::LINE_LIST, bool _isRelative = false)
+    EOGSPrimitive(float _x, float _y, float _w, float _h, bool _isRelative = false, EOGSPrimitiveType _type = EOGSPrimitiveType::LINE_LIST)
         : EOGSWidget<EOGSPrimitive>(_x, _y, _w, _h, _isRelative), primitiveType(_type) {
         setFilled(true);
         setColor(DrawColor::WHITE);
@@ -199,7 +199,6 @@ private:
             int16_t y3 = getYCoord(p3.y, p3.relative);
 
             if (filled) {
-                Serial.println(y1);
                 eogs->drawTriangle(x1, y1, x2, y2, x3, y3);
             } else {
                 // 绘制三角形边框，避免重复绘制共用边
@@ -275,7 +274,7 @@ public:
         return this;
     }
     
-    EOGSPrimitive* addPoint(float x, float y, bool relative = true) {
+    EOGSPrimitive* addPoint(float x, float y, bool relative) {
         points.emplace_back(x, y, relative);
         return this;
     }
@@ -291,6 +290,14 @@ public:
         }
         return this;
     }
+
+    EOGSPrimitive* setPointPosition(uint16_t index, float x, float y, bool relative) {
+        if(index >= points.size()) return this;
+        points[index].x = x;
+        points[index].y = y;
+        points[index].relative = relative;
+        return this;
+    }
     
     size_t getPointCount() const {
         return points.size();
@@ -303,3 +310,6 @@ public:
         return nullptr;
     }
 };
+
+#undef filled
+#undef drawColor

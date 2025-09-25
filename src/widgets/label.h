@@ -131,6 +131,14 @@ public:
     }
 // 文本
     const std::string& getText() const { return text; }
+    EOGSLabel* setText(const uint32_t _numText){
+        text = std::to_string(_numText);
+        return this;
+    }
+    EOGSLabel* setText(const int32_t _numText){
+        text = std::to_string(_numText);
+        return this;
+    }
     EOGSLabel* setText(const std::string& _text) {
         text = _text;
         textUpdated = false;  // 文本改变后需要重新计算文本大小

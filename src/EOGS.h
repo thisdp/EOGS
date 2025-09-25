@@ -12,6 +12,7 @@
 #include "animation/animation.h"
 #include "input/input.h"
 
+using EventPreRender = void(*)(EOGS*);
 class EOGSAnimBase;
 // EOGS主类
 class EOGS {
@@ -23,9 +24,10 @@ private:
     uint32_t lastFrameTime;  // 上一帧的时间戳
     uint32_t frameCount;     // 帧计数器
     uint32_t fps;            // 当前FPS
-    uint32_t lastFpsUpdate;  // 上次FPS更新时间
+    uint32_t lastFpsUpdate;  // 上次FPS更新时间 (1s)
     uint32_t targetFrameTime; // 目标帧时间（微秒）
 public:
+    EventPreRender preRender = 0;
     EOGS(EOGS_HAL& _hal, int16_t scrWidth, int16_t scrHeight, uint32_t targetFPS = 0);
     ~EOGS();
     EOGSScreen* getScreen() { return &screen; }
