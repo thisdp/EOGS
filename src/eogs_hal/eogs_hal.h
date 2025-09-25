@@ -59,6 +59,7 @@ public:
   virtual void setFontMode(uint8_t fontMode) = 0;
   virtual void setFontDirection(uint8_t fontDirection) = 0;
   virtual uint16_t getFontWidth(std::string &_text) { return 0; }
+  virtual uint16_t getUTF8FontWidth(std::string &_text) { return 0; }
   virtual uint16_t getFontHeight() { return 0; }
   virtual void setFontPosBaseline() = 0;
   virtual void setFontPosBottom() = 0;
@@ -68,7 +69,7 @@ public:
 
   //notice: _x和_y是字体左下角的坐标 _x and _y is the coordinate the lower left corner of the font
   virtual void drawText(int16_t x, int16_t y, const std::string &text) = 0;
-  virtual void drawTextUTF8(int16_t x, int16_t y, const std::string &text) = 0;
+  virtual void drawUTF8Text(int16_t x, int16_t y, const std::string &text) = 0;
   virtual void drawPixel(int16_t x, int16_t y) = 0;
   virtual void drawVDottedLine(int16_t x, int16_t y, int16_t h) = 0;
   virtual void drawHDottedLine(int16_t x, int16_t y, int16_t l) = 0;

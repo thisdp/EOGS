@@ -16,12 +16,14 @@
 #define scroll generalFlag4
 //Flag 5
 #define clip generalFlag5
-//Flag 6~7
-#define drawColor generalColor6
+//Flag 6
+#define isUTF8 generalFlag6
 //Flag 8~9
-#define hAlign generalHAlign8
+#define drawColor generalColor8
 //Flag 10~11
-#define vAlign generalVAlign10
+#define hAlign generalHAlign10
+//Flag 12~13
+#define vAlign generalVAlign12
 class EOGSLabel : public EOGSWidget<EOGSLabel> {
 protected:
     std::string text;
@@ -53,12 +55,19 @@ public:
         renderY = parentRY+y;
 
         insideOfRenderArea = !isOutsideOfParent(parentW, parentH);
-        textAlignUpdated = false;  // 位置改变后需要重新计算文本位置
+        requestTextAlignUpdate();  // 位置改变后需要重新计算文本位置
         return true;
     }
 
+    void requestTextAlignUpdate(bool instant = false) {
+        textAlignUpdated = false;
+        if(!instant) return;
+        updateTextAlign();
+    }
     bool updateTextAlign(){
-        if (textAlignUpdated) return false; textAlignUpdated = true;
+        if (textAlignUpdated) return false;
+        textAlignUpdated = true;
+
         switch (hAlign) {
             case HAlign::CENTER:    textX = static_cast<int16_t>(renderX + (w - textW) / 2);  break;
             case HAlign::RIGHT:     textX = static_cast<int16_t>(renderX + w - textW);        break;
@@ -74,12 +83,18 @@ public:
         return true;
     }
 
+    void requestTextUpdate(bool instant = false) {
+        textUpdated = false;
+        updateText(getEOGS());
+    }
     bool updateText(EOGS* eogs) {
-        if (textUpdated) return false; textUpdated = true;  // 标记文本已更新
+        if (textUpdated) return false;
+        textUpdated = true;  // 标记文本已更新
+    
         if (font != nullptr) eogs->setFont(font);
-        textW = eogs->getFontWidth(text);
+        textW = isUTF8?eogs->getUTF8FontWidth(text):eogs->getFontWidth(text);
         textH = eogs->getFontHeight();
-        textAlignUpdated = false;  // 位置改变后需要重新计算文本位置
+        requestTextAlignUpdate();  // 位置改变后需要重新计算文本位置
         return true;
     }
     
@@ -96,15 +111,18 @@ public:
                 eogs->setFontMode(isFontTransparent);
                 if(clip) eogs->setClipWindow(x, y, x+w, y+h);   // 由于使用率不为100%，不缓存
                 if(!scroll){
-                    eogs->drawText(textX, textY, text);
+                    if(isUTF8) eogs->drawUTF8Text(textX, textY, text);
+                    else eogs->drawText(textX, textY, text);
                 }else{
                     if(textW <= w){
-                        eogs->drawText(textX, textY, text);
+                        if(isUTF8) eogs->drawUTF8Text(textX, textY, text);
+                        else eogs->drawText(textX, textY, text);
                     }else{
                         int16_t diff = textW - w;
                         int16_t offset = ((eogs->millis()/100)%(diff+10)) - 5;
                         offset = mathClamp(offset, 0, diff);
-                        eogs->drawText(textX-offset, textY, text);
+                        if(isUTF8) eogs->drawUTF8Text(textX, textY, text);
+                        else eogs->drawText(textX, textY, text);
                     }
                 }
                 if(clip) eogs->setMaxClipWindow();
@@ -141,14 +159,21 @@ public:
     }
     EOGSLabel* setText(const std::string& _text) {
         text = _text;
-        textUpdated = false;  // 文本改变后需要重新计算文本大小
+        requestTextUpdate();  // 文本改变后需要重新计算文本大小
+        return this;
+    }
+//UTF8标记
+    bool getUTF8Enabled() const { return isUTF8; }
+    EOGSLabel* setUTF8Enabled(bool enabled) { 
+        isUTF8 = enabled;
+        requestTextUpdate();  // UTF8标记改变后需要重新计算文本大小
         return this;
     }
 // 字体
     const unsigned char* getFont() const { return font; }
     EOGSLabel* setFont(const unsigned char* _font) {
         font = _font;
-        textUpdated = false;  // 字体改变后需要重新计算文本大小
+        requestTextUpdate();  // 字体改变后需要重新计算文本大小
         return this;
     }
 // 字体透明
@@ -208,6 +233,7 @@ public:
 #undef isFontTransparent
 #undef scroll
 #undef clip
+#undef isUTF8
 #undef drawColor
 #undef hAlign
 #undef vAlign

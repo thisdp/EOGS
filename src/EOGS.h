@@ -50,7 +50,7 @@ public:
     // 绘制ASCII文本
     void drawText(int16_t x, int16_t y, const std::string& text);
     // 绘制UTF8文本
-    void drawTextUTF8(int16_t x, int16_t y, const std::string& text);
+    void drawUTF8Text(int16_t x, int16_t y, const std::string& text);
     // 绘制垂直虚线
     void drawVDottedLine(int16_t x, int16_t y, int16_t h);
     // 绘制水平虚线
@@ -92,6 +92,7 @@ public:
     void setFontPosCenter();
     // 获取字体宽度
     unsigned char getFontWidth(const std::string& text);
+    unsigned char getUTF8FontWidth(const std::string& text);
     // 获取字体高度
     unsigned char getFontHeight();
     

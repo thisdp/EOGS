@@ -64,8 +64,8 @@ void EOGS::drawText(int16_t x, int16_t y, const std::string& text) {
 }
 
 // 绘制UTF8文本
-void EOGS::drawTextUTF8(int16_t x, int16_t y, const std::string& text) {
-    hal->drawTextUTF8(x, y, text);
+void EOGS::drawUTF8Text(int16_t x, int16_t y, const std::string& text) {
+    hal->drawUTF8Text(x, y, text);
 }
 
 // 绘制垂直虚线
@@ -170,6 +170,10 @@ void EOGS::setFontMode(uint8_t fontMode) {
 // 获取字体宽度
 unsigned char EOGS::getFontWidth(const std::string& text) {
     return hal->getFontWidth(const_cast<std::string&>(text));
+}
+
+unsigned char EOGS::getUTF8FontWidth(const std::string& text) {
+    return hal->getUTF8FontWidth(const_cast<std::string&>(text));
 }
 
 // 获取字体高度

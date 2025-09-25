@@ -63,12 +63,16 @@ public:
         u8g2Interface->setFontMode(fontMode);
     }
     
-    void setFontDirection(uint8_t fontDirection){
+    void setFontDirection(uint8_t fontDirection) override {
         u8g2Interface->setFontDirection(fontDirection);
     }
 
     uint16_t getFontWidth(std::string &_text) override {
         return u8g2Interface->getStrWidth(_text.c_str());
+    }
+
+    uint16_t getUTF8FontWidth(std::string &_text) override {
+        return u8g2Interface->getUTF8Width(_text.c_str());
     }
     
     uint16_t getFontHeight() override {
@@ -103,7 +107,7 @@ public:
         u8g2Interface->drawStr(x, y, text.c_str());
     }
     
-    void drawTextUTF8(int16_t x, int16_t y, const std::string &text) override {
+    void drawUTF8Text(int16_t x, int16_t y, const std::string &text) override {
         u8g2Interface->drawUTF8(x, y, text.c_str());
     }
     

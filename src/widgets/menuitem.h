@@ -41,6 +41,8 @@
 #define scroll generalFlag21
 //Flag 22
 #define clip generalFlag22
+//Flag 23
+#define isUTF8 generalFlag23
 
 class EOGSMenuSubItem;
 class EOGSMenuItem : public EOGSWidget<EOGSMenuItem> {
@@ -84,7 +86,7 @@ public:
         return rootItem->getDefaultItemHeight();
     }  // 默认菜单项高度
 
-    virtual void requestTextUpdate(bool instant){}
+    virtual void requestTextUpdate(bool instant = false){}
     virtual bool updateText(EOGS* eogs){ return false; }
     virtual void requestTextAlignUpdate(bool instant = false){}
     virtual bool updateTextAlign(){ return false; }
@@ -318,7 +320,7 @@ public:
     EOGSMenuItem* getParentMenuItem() override { return parentMenuItem; }
     EOGSMenuItem* getRootMenuItem() override { return parentMenuItem != nullptr ? parentMenuItem->getRootMenuItem() : nullptr; }
 //核心程序
-    void requestTextUpdate(bool instant) override {
+    void requestTextUpdate(bool instant = false) override {
         textUpdated = false;
         updateText(getEOGS());
     }
@@ -326,7 +328,7 @@ public:
         if (textUpdated) return false;
         textUpdated = true;  // 标记文本已更新
         if (font != nullptr) eogs->setFont(font);
-        textW = eogs->getFontWidth(text);
+        textW = isUTF8 ? eogs->getUTF8FontWidth(text) : eogs->getFontWidth(text);
         textH = eogs->getFontHeight();
         requestTextAlignUpdate();
         return true;
@@ -428,15 +430,18 @@ public:
             eogs->setFontMode(isFontTransparent);
             if(clip) eogs->setClipWindow(x, y, x+w, y+h);   // 由于使用率不为100%，不缓存
             if(!scroll){
-                eogs->drawText(textX, textY, text);
+                if(isUTF8) eogs->drawUTF8Text(textX, textY, text);
+                else eogs->drawText(textX, textY, text);
             }else{
                 if(textW <= w){
-                    eogs->drawText(textX, textY, text);
+                    if(isUTF8) eogs->drawUTF8Text(textX, textY, text);
+                    else eogs->drawText(textX, textY, text);
                 }else{
                     int16_t diff = textW - w;
                     int16_t offset = ((eogs->millis()/100)%(diff+10)) - 5;
                     offset = mathClamp(offset, 0, diff);
-                    eogs->drawText(textX-offset, textY, text);
+                    if(isUTF8) eogs->drawUTF8Text(textX, textY, text);
+                    else eogs->drawText(textX, textY, text);
                 }
             }
             if(clip) eogs->setMaxClipWindow();
@@ -477,6 +482,14 @@ public:
     EOGSMenuSubItem* setText(const std::string& _text) {
         text = _text;
         requestTextUpdate(true);
+        requestSelectAreaUpdate(true);
+        return this;
+    }
+//UTF8标记
+    bool getUTF8Enabled() const { return isUTF8; }
+    EOGSMenuSubItem* setUTF8Enabled(bool enabled) { 
+        isUTF8 = enabled;
+        requestTextUpdate();  // UTF8标记改变后需要重新计算文本大小
         requestSelectAreaUpdate(true);
         return this;
     }
@@ -625,3 +638,4 @@ EOGSMenuSubItem* EOGSMenuItem::createSubItem(Args&&... args) {
 #undef isSelected
 #undef scroll
 #undef clip
+#undef isUTF8
