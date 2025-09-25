@@ -87,6 +87,11 @@ void EOGS::drawHLine(int16_t x, int16_t y, int16_t l) {
     hal->drawHLine(x, y, l);
 }
 
+// 绘制任意线条
+void EOGS::drawLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2) {
+    hal->drawLine(x1, y1, x2, y2);
+}
+
 // 绘制矩形框
 void EOGS::drawFrame(int16_t x, int16_t y, int16_t w, int16_t h) {
     if(!(w && h)) return;
@@ -138,7 +143,7 @@ void EOGS::drawArc(int16_t x, int16_t y, int16_t r, int16_t start, int16_t end){
     hal->drawArc(x, y, r, start, end);
 }
 
-// 绘制三角形
+// 绘制填充三角形
 void EOGS::drawTriangle(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3) {
     hal->drawTriangle(x1, y1, x2, y2, x3, y3);
 }
@@ -190,4 +195,3 @@ void EOGS::setFontPosCenter() {
 void EOGS::setFPSLimit(uint32_t fps) {
     targetFrameTime = fps > 0 ? 1000000 / fps : 0; // 微秒
 }
-

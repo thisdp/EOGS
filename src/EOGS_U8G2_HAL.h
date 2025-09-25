@@ -10,11 +10,27 @@
 class U8G2_EOGS_HAL : public EOGS_HAL {
 private:
 
-    // 注意：在实际使用中，需要定义u8g2_t结构体
     U8G2* u8g2Interface;
     
 public:
+    //MCU函数
+    void delay(uint32_t _mill) override {
+        ::delay(_mill);
+    }
 
+    void delayMicroseconds(uint32_t _micros) override {
+        ::delayMicroseconds(_micros);
+    }
+    
+    uint32_t millis() override {
+        return ::millis();
+    }
+
+    uint32_t micros() override {
+        return ::micros();
+    }
+
+    //屏幕
     U8G2_EOGS_HAL(U8G2& _u8g2) : EOGS_HAL(255), u8g2Interface(&_u8g2) {}
     
     ~U8G2_EOGS_HAL() = default;
@@ -111,6 +127,10 @@ public:
         u8g2Interface->drawHLine(x, y, l);
     }
     
+    void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1){
+        u8g2Interface->drawLine(x0, y0, x1, y1);
+    }
+
     void drawBMP(int16_t x, int16_t y, int16_t w, int16_t h, const uint8_t *bitMap) override {
         u8g2Interface->drawXBM(x, y, w, h, bitMap);
     }
@@ -157,22 +177,6 @@ public:
 
     void setMaxClipWindow() override {
         u8g2Interface->setMaxClipWindow();
-    }
-    
-    void delay(uint32_t _mill) override {
-        ::delay(_mill);
-    }
-    
-    uint32_t millis() override {
-        return ::millis();
-    }
-
-    uint32_t micros() override {
-        return ::micros();
-    }
-    
-    bool getKey() override {
-        return false;
     }
     
 };

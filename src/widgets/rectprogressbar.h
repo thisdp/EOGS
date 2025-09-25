@@ -92,8 +92,8 @@ public:
 
     void render(EOGS* eogs, int16_t parentRX, int16_t parentRY, int16_t parentW, int16_t parentH) override {
         if (!visible || eogs == nullptr) return;
-        updateDimension(parentW, parentH);
-        updateRenderPos(eogs, parentRX, parentRY, parentW, parentH);
+        bool dimensionUpdated = updateDimension(parentW, parentH);
+        bool renderPosUpdated = updateRenderPos(eogs, parentRX, parentRY, parentW, parentH);
         updateIndicatorDimension(eogs);
         if (insideOfRenderArea || renderOutsideOfRenderArea) {
             // 绘制背景
@@ -127,7 +127,11 @@ public:
                     eogs->drawFrame(indicatorX, indicatorY, indicatorW, indicatorH);
             }
             eogs->setMaxClipWindow();
-            if (percentageLabel != nullptr) percentageLabel->render(eogs, parentRX, parentRY, parentW, parentH);
+            if (percentageLabel != nullptr){
+                if(dimensionUpdated) percentageLabel->requestDimensionUpdate();
+                if(renderPosUpdated) percentageLabel->requestRenderPosUpdate();
+                percentageLabel->render(eogs, renderX, renderY, w, h);
+            }
         }
     }
 
@@ -165,7 +169,7 @@ public:
             if(percentageLabel != nullptr) return this;
             percentageLabel = new EOGSLabel(0.0f, 0.0f, 1.0f, 1.0f, true);
             percentageLabel->setParent(this,true);
-            percentageLabel->setColor(DrawColor::WHITE);
+            percentageLabel->setColor(DrawColor::XOR);
             percentageLabel->setHAlign(HAlign::CENTER);
             percentageLabel->setVAlign(VAlign::CENTER);
             percentageLabel->setForceRenderOutsideOfCanvas(true);

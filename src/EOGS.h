@@ -10,9 +10,9 @@
 #include "eogs_hal/eogs_hal.h"
 #include "widgets/screen.h"
 #include "animation/animation.h"
+#include "input/input.h"
 
 class EOGSAnimBase;
-
 // EOGS主类
 class EOGS {
 private:
@@ -73,7 +73,9 @@ public:
     void drawDisc(int16_t x, int16_t y, int16_t r);
     // 绘制圆弧
     void drawArc(int16_t x, int16_t y, int16_t r, int16_t start, int16_t end);
-    // 绘制三角形
+    // 绘制任意线条
+    void drawLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
+    // 绘制填充三角形
     void drawTriangle(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3);
     // 设置渲染区域
     void setClipWindow(int16_t x0, int16_t y0, int16_t x1, int16_t y1);
@@ -111,6 +113,4 @@ public:
     inline void delay(uint32_t _mill) { hal->delay(_mill); }
     inline uint32_t millis() { return hal->millis(); }
     inline uint32_t micros() { return hal->micros(); }
-    // 键盘输入处理方法
-    bool getKey() const { return hal->getKey(); }
 };
