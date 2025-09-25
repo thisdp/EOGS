@@ -20,29 +20,25 @@
 //Flag 5
 #define selectAreaUpdated generalFlag5
 //Flag 6~7
-#define textColor generalColor6
+#define textAlign generalAlign6
 //Flag 8~9
-#define selectedTextColor generalColor8
-//Flag 10~11
-#define imageColor generalColor10
-//Flag 12~13
-#define selectedImageColor generalColor12
-//Flag 14~15
-#define textAlign generalAlign14
-//Flag 16~17
-#define imageAlign generalAlign16
-//Flag 18
-#define textUpdated generalFlag18
-//Flag 19
-#define isFontTransparent generalFlag19
-//Flag 20
-#define isSelected generalFlag20
-//Flag 21
-#define scroll generalFlag21
-//Flag 22
-#define clip generalFlag22
-//Flag 23
-#define isUTF8 generalFlag23
+#define imageAlign generalAlign8
+//Flag 10
+#define textUpdated generalFlag10
+//Flag 11
+#define isFontTransparent generalFlag11
+//Flag 12
+#define isSelected generalFlag12
+//Flag 13
+#define scroll generalFlag13
+//Flag 14
+#define clip generalFlag14
+//Flag 15
+#define isUTF8 generalFlag15
+//Flag 16
+#define isEnterable generalFlag16
+//Flag 17
+#define isSelectable generalFlag17
 
 class EOGSMenuSubItem;
 class EOGSMenuItem : public EOGSWidget<EOGSMenuItem> {
@@ -56,7 +52,11 @@ protected:
     int16_t bottomViewIndex;    // 底部可见项索引（用于滚动）
     int16_t viewOffset;       // 滚动偏移量
     int16_t paddingLeftOrTop, paddingRightOrBottom;    // 左右/上下边距
-    
+    //颜色 (内存对齐)
+    DrawColor textColor;
+    DrawColor selectedTextColor;
+    DrawColor imageColor;
+    DrawColor selectedImageColor;
 public:
     // 构造函数
     EOGSMenuItem(float _x, float _y, float _w, float _h, bool _isRelative = false)
@@ -69,10 +69,12 @@ public:
     bool isContainer() const override { return true; } 
     std::vector<EOGSWidgetBase*>* getChildren() override { return &children; }
 
-    virtual void setSelected(bool selected) { }
+    virtual EOGSMenuItem* setSelected(bool selected) { return this; }
     virtual bool getSelected() const { return false; }
     virtual int16_t getSelectedX() const { return 0; }
     virtual int16_t getSelectedW() const { return 0; }
+    virtual bool getEnterable() const { return true; }
+    virtual bool getSelectable() const { return true; }
 
     virtual int16_t getMenuHeight() {
         EOGSMenuItem* rootItem = getRootMenuItem();
@@ -222,7 +224,6 @@ public:
         selectedIndex = index;
     }
 
-
     int16_t getTopViewIndex() const { return topViewIndex; }
     void setTopViewIndex(int16_t index) { topViewIndex = index; }
 
@@ -308,10 +309,12 @@ public:
         setSelectedImageColor(DrawColor::XOR);
         setTextAlign(0);        // 水平/垂直对齐
         setImageAlign(0);       // 水平/垂直对齐
+        setEnterable(true);
+        setSelectable(true);
     }
     
 //选中
-    void setSelected(bool selected) override { isSelected = selected; }
+    EOGSMenuItem *setSelected(bool selected) override { isSelected = selected; return this; }
     bool getSelected() const override { return isSelected; }
     int16_t getSelectedX() const override { return selectedX; }
     int16_t getSelectedW() const override { return selectedW; }
@@ -461,7 +464,17 @@ public:
             if (child->isVisible()) child->render(eogs,renderX,renderY,w,h);
         }
     }
-    
+
+    bool getEnterable() const override { return isEnterable; }
+    EOGSMenuSubItem* setEnterable(bool _isEnterable) {
+        isEnterable = _isEnterable;
+        return this;
+    }
+    bool getSelectable() const override { return isSelectable; }
+    EOGSMenuSubItem* setSelectable(bool _isSelectable) {
+        isSelectable = _isSelectable;
+        return this;
+    }
 /*********文本方法 开始*********/
 //字体
     const unsigned char* getFont() const { return font; }
@@ -627,10 +640,6 @@ EOGSMenuSubItem* EOGSMenuItem::createSubItem(Args&&... args) {
 #undef imageAlignUpdated
 #undef textAlignUpdated
 #undef selectAreaUpdated
-#undef textColor
-#undef selectedTextColor
-#undef imageColor
-#undef selectedImageColor
 #undef textAlign
 #undef imageAlign
 #undef textUpdated
@@ -639,3 +648,4 @@ EOGSMenuSubItem* EOGSMenuItem::createSubItem(Args&&... args) {
 #undef scroll
 #undef clip
 #undef isUTF8
+#undef isEnterable

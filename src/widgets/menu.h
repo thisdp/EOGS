@@ -42,6 +42,8 @@ protected:
     int16_t selectionY;                       // 选择框动画当前位置，相对于菜单
     int16_t selectionW;                       // 选择框动画当前位置，相对于菜单
     int16_t selectionH;                       // 选择框动画当前位置，相对于菜单
+    int8_t selectionHorizontalExpansion;      // 选择框水平扩展
+    int8_t selectionVerticalExpansion;        // 选择框垂直扩展
     int16_t selectionRadius;                  // 选择框框圆角半径
     
     
@@ -80,6 +82,8 @@ public:
           selectionY(0),
           selectionW(0),
           selectionH(0),
+          selectionHorizontalExpansion(1),
+          selectionVerticalExpansion(1),
           selectionRadius(0),
           scrollStartOffset(0),
           scrollTargetOffset(0),
@@ -119,7 +123,7 @@ public:
         //渲染菜单子项仅是Menu的职能
         if (!visible || eogs == nullptr) return;
         bool wasDimensionUpdated = updateDimension(parentW, parentH);
-        bool wasRenderPosUpdated = updateRenderPos(eogs, parentRX, parentRY, parentW, parentH);
+        updateRenderPos(eogs, parentRX, parentRY, parentW, parentH);
         if(wasDimensionUpdated) {
             currentMenuItem->requestViewRangeUpdate();
             // 更新滚动条的位置和尺寸
@@ -195,16 +199,16 @@ public:
             if(selectedAvailable){
                 EOGSMenuItem *selectedItem = (*currentChildrenItems)[selected];
                 if(selectionAnimation.isRunning()){
-                    selectionX = selectionStartX + selectionAnimation.getProgress() * ( selectedItem->getSelectedX() - selectionStartX);
-                    selectionY = selectionStartY + selectionAnimation.getProgress() * ( selectedItem->getAbsY()+renderY-viewOffset - selectionStartY);
-                    selectionW = selectionStartW + selectionAnimation.getProgress() * ( selectedItem->getSelectedW() - selectionStartW);
-                    selectionH = selectionStartH + selectionAnimation.getProgress() * ( selectedItem->getAbsH() - selectionStartH);
+                    selectionX = selectionStartX + selectionAnimation.getProgress() * ( selectedItem->getSelectedX() - selectionStartX - selectionHorizontalExpansion);
+                    selectionY = selectionStartY + selectionAnimation.getProgress() * ( selectedItem->getAbsY()+renderY-viewOffset - selectionStartY - selectionVerticalExpansion);
+                    selectionW = selectionStartW + selectionAnimation.getProgress() * ( selectedItem->getSelectedW() - selectionStartW + selectionHorizontalExpansion+selectionHorizontalExpansion);
+                    selectionH = selectionStartH + selectionAnimation.getProgress() * ( selectedItem->getAbsH() - selectionStartH + selectionVerticalExpansion+selectionVerticalExpansion);
                     
                 }else{
-                    selectionX = selectedItem->getSelectedX();
-                    selectionY = selectedItem->getAbsY()+renderY-viewOffset;
-                    selectionW = selectedItem->getSelectedW();
-                    selectionH = selectedItem->getAbsH();
+                    selectionX = selectedItem->getSelectedX() - selectionHorizontalExpansion;
+                    selectionY = selectedItem->getAbsY()+renderY-viewOffset - selectionVerticalExpansion;
+                    selectionW = selectedItem->getSelectedW() + selectionHorizontalExpansion+selectionHorizontalExpansion;
+                    selectionH = selectedItem->getAbsH() + selectionVerticalExpansion+selectionVerticalExpansion;
                 }
             }
             // 更新滚动动画
@@ -274,9 +278,71 @@ public:
     EOGSMenu* setSelectedSubItemIndex(int16_t index){ return itemNavigate(index); }
     int16_t getSelectedSubItemIndex() const { return currentMenuItem->getSelectedSubItemIndex(); }
     EOGSMenuItem *getSelectedSubItem() const { return currentMenuItem->getSelectedSubItem(); }
+//选择框水平扩展
+    int16_t getSelectionHorizontalExpansion() const { return selectionHorizontalExpansion; }
+    EOGSMenu* setSelectionHorizontalExpansion(int16_t value) {
+        selectionHorizontalExpansion = value;
+        return this;
+    }
+//选择框垂直扩展
+    int16_t getSelectionVerticalExpansion() const { return selectionVerticalExpansion; }
+    EOGSMenu* setSelectionVerticalExpansion(int16_t value) {
+        selectionVerticalExpansion = value;
+        return this;
+    }
 // 导航
-    EOGSMenu* itemNavigateUp() { return itemNavigate(getSelectedSubItemIndex() - 1); }
-    EOGSMenu* itemNavigateDown() { return itemNavigate(getSelectedSubItemIndex() + 1); }
+    EOGSMenu* itemNavigateUp() {
+        int16_t currentIndex = getSelectedSubItemIndex();
+        int16_t targetIndex = findNextSelectableIndex(currentIndex, false);  // 向前查找
+        if(targetIndex != -1) {
+            return itemNavigate(targetIndex);
+        }
+        return this;
+    }
+    EOGSMenu* itemNavigateDown() {
+        int16_t currentIndex = getSelectedSubItemIndex();
+        int16_t targetIndex = findNextSelectableIndex(currentIndex, true);  // 向后查找
+        if(targetIndex != -1) {
+            return itemNavigate(targetIndex);
+        }
+        return this;
+    }
+    
+    // 从指定index开始，查找下一个可选的index
+    int16_t findNextSelectableIndex(int16_t startIndex, bool forward = true) {
+        if(currentMenuItem == nullptr) return -1;
+        const std::vector<EOGSMenuItem*>* items = currentMenuItem->getChildrenMenuItems();
+        int16_t itemCount = static_cast<int16_t>(items->size());
+        if(itemCount == 0) return -1;
+        int16_t currentIndex = startIndex;
+        while(true) {
+            // 根据方向更新索引
+            if(forward) {
+                currentIndex++;
+                if(currentIndex >= itemCount) {
+                    if(!navigateLoop) return -1;    // 非循环模式，到达末尾
+                    currentIndex = 0;  // 循环到开头
+                }
+            } else {
+                currentIndex--;
+                if(currentIndex < 0) {
+                    if(!navigateLoop) return -1;    // 非循环模式，到达开头
+                    currentIndex = itemCount - 1;  // 循环到末尾
+                }
+            }
+            
+            // 检查是否回到起始位置（循环模式）
+            if(navigateLoop && currentIndex == startIndex) return -1;  // 已经循环一圈，没有找到可选项
+            
+            // 检查是否找到可选项
+            if(currentIndex >= 0 && currentIndex < itemCount) {
+                EOGSMenuItem* item = (*items)[currentIndex];
+                if(item != nullptr && item->getSelectable()) return currentIndex;   // 找到了可选项
+            }
+        }
+        return -1;  // 没有找到可选项
+    }
+    
     EOGSMenu* itemNavigate(int16_t targetIndex){
         if(currentMenuItem == nullptr) return this;
         const std::vector<EOGSMenuItem*>* items = currentMenuItem->getChildrenMenuItems();
@@ -287,8 +353,16 @@ public:
         }else if(targetIndex < 0 || targetIndex >= itemCount){  //非循环模式
             return this;
         }
+        
+        // 检查目标项是否可选
+        EOGSMenuItem* targetItem = (*items)[targetIndex];
+        if(targetItem != nullptr && !targetItem->getSelectable()) {
+            // 如果不可选，直接返回，不执行任何操作
+            return this;
+        }
+        
         EOGSMenuItem* selectedItem = (*items)[targetIndex];
-        //滑动前强制更新一次所有子项的相关尺寸
+        //滑动前强制更新一次目标子项的相关尺寸
         selectedItem->requestDimensionUpdate(true); //Force Update
         selectedItem->requestRenderPosUpdate(true); //Force Update
         selectedItem->requestTextUpdate(true);  //Force Update Text
@@ -324,6 +398,8 @@ public:
 // 导航至菜单
     EOGSMenu* subMenuNavigateTo(EOGSMenuItem* item) {
         if(item == nullptr) return this;
+        if(!item->getEnterable()) return this;  // 不可进入
+        if(item->getChildrenMenuItems()->size() == 0) return this;   //无子项目，不可进入
         subMenuNavigationDirection = 0;
         if(currentMenuItem != nullptr){
             subMenuNavigationDirection = currentMenuItem->isParentMenuItem(item);    //如果是父级，则往右滑动，否则往左滑动
@@ -351,6 +427,7 @@ public:
     EOGSMenu* subMenuNavigateToParent() {
         if(currentMenuItem == this) return this;    // 当前菜单为根菜单，不再返回上级菜单
         EOGSMenuItem *parentItem = currentMenuItem->getParentMenuItem();
+        //可能需要考虑上级菜单无法进入的问题? todo
         if(parentItem == nullptr) return this;  // 当前菜单没有父菜单，无法返回上级菜单
         subMenuNavigateTo(parentItem);  //导航至目标菜单
         return this;
