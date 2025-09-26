@@ -123,7 +123,7 @@ public:
         //渲染菜单子项仅是Menu的职能
         if (!visible || eogs == nullptr) return;
         bool wasDimensionUpdated = updateDimension(parentW, parentH);
-        updateRenderPos(eogs, parentRX, parentRY, parentW, parentH);
+        bool wasRenderPosUpdated = updateRenderPos(eogs, parentRX, parentRY, parentW, parentH);
         if(wasDimensionUpdated) {
             currentMenuItem->requestViewRangeUpdate();
             // 更新滚动条的位置和尺寸
@@ -131,6 +131,7 @@ public:
             scrollBarVertical.updateDimension(w,h);    // 更新长宽
             scrollBarVertical.setX(getAbsW() - scrollBarVertical.getAbsW(), false);  // 计算滚动条的X坐标
         }
+        if(wasRenderPosUpdated) scrollBarVertical.requestRenderPosUpdate();
         currentMenuItem->updateViewRange();  // 更新可见项范围
         int16_t clipEndX = renderX + w;
         int16_t clipEndY = renderY + h;

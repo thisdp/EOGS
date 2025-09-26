@@ -15,6 +15,7 @@ EOGSLabelContainer	KEYWORD1
 EOGSRectangle	KEYWORD1
 EOGSRectangleContainer	KEYWORD1
 EOGSCircle	KEYWORD1
+EOGSSwitchButton	KEYWORD1
 EOGSAnim	KEYWORD1
 EOGSAnimMove	KEYWORD1
 EOGSEasing	KEYWORD1
@@ -107,6 +108,16 @@ InBounce	KEYWORD2
 InOutBounce	KEYWORD2
 OutBack	KEYWORD2
 InBack	KEYWORD2
+setChecked	KEYWORD2
+getChecked	KEYWORD2
+setIndicatorColorOn	KEYWORD2
+getIndicatorColorOn	KEYWORD2
+setIndicatorColorOff	KEYWORD2
+getIndicatorColorOff	KEYWORD2
+setBgColorOn	KEYWORD2
+getBgColorOn	KEYWORD2
+setBgColorOff	KEYWORD2
+getBgColorOff	KEYWORD2
 InOutBack	KEYWORD2
 
 #######################################

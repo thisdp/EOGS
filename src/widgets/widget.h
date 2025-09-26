@@ -204,13 +204,6 @@ public:
     void setForceRenderOutsideOfCanvas(bool forceRenderOutsideOfCanvas);
     void addChild(EOGSWidgetBase* child, bool isUpdateParent = true);
     void removeChild(EOGSWidgetBase* child, bool isUpdateParent = true);
-    
-    // 交互方法
-    virtual void onPress(uint16_t continuousTimes = 1) {}
-    virtual void onRelease(uint16_t continuousTimes = 1) {}
-    virtual void onNavigate(bool increase, uint32_t continuousTime = 0) {}
-    virtual void onConfirm() {}
-    virtual void onLongPress() {}
 
     // 新Class可能需要重载的
 protected:
