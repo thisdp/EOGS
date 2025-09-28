@@ -14,23 +14,39 @@
 // Flag 3
 #define isChecked generalFlag3
 // Flag 4
-#define bgFilled generalFlag4
+#define bgOnFilled generalFlag4
 // Flag 5
-#define indicatorFilled generalFlag5
-// Flag 6~7
-#define indicatorColorOn generalColor6
+#define bgOffFilled generalFlag5
+// Flag 6
+#define indicatorOnFilled generalFlag6
+// Flag 7
+#define indicatorOffFilled generalFlag7
 // Flag 8~9
-#define indicatorColorOff generalColor8
+#define indicatorFrameColorOn generalColor8
 // Flag 10~11
-#define bgColorOn generalColor10
+#define indicatorFrameColorOff generalColor10
 // Flag 12~13
-#define bgColorOff generalColor12
+#define indicatorFilledColorOn generalColor12
+// Flag 14~15
+#define indicatorFilledColorOff generalColor14
+// Flag 16~17
+#define indicatorColorBase generalColor16
+// Flag 18~19
+#define bgColorOn generalColor18
+// Flag 20~21
+#define bgColorOff generalColor20
 
 //切换按钮，兼复选框实现
 class EOGSSwitchButton : public EOGSWidget<EOGSSwitchButton> {
 protected:
-    int16_t switchPadding;        // 开关内边距
+    int16_t paddingTop;        // 上内边距
+    int16_t paddingRight;      // 右内边距
+    int16_t paddingBottom;     // 下内边距
+    int16_t paddingLeft;       // 左内边距
+    // 动画相关变量
+    EOGSAnimBase indicatorAnimation;        // 指示器位置动画
     float indicatorWidth;         // 指示器宽度（支持相对模式）
+    int16_t indicatorAnimOffsetX;                 // 动画X坐标（偏移)
     int16_t bgRadius;             // 背景圆角半径
     int16_t indicatorRadius;      // 指示器圆角半径
     int16_t indicatorRenderX;     // 指示器渲染X坐标
@@ -42,23 +58,29 @@ public:
     // 构造函数
     EOGSSwitchButton(float _x, float _y, float _w, float _h, bool _isRelative = false)
         : EOGSWidget<EOGSSwitchButton>(_x, _y, _w, _h, _isRelative),
-          switchPadding(2),
+          paddingTop(2), paddingRight(2), paddingBottom(2), paddingLeft(2),
+          indicatorAnimation(250, EOGSBuiltInEasing::OutSine()),
           indicatorWidth(0.5f),  // 默认为开关宽度的一半
+          indicatorAnimOffsetX(0),
           bgRadius(0),           // 默认无圆角
           indicatorRadius(0),    // 默认无圆角
           indicatorRenderX(0),
           indicatorRenderY(0),
           indicatorRenderW(0),
-          indicatorRenderH(0) {
+          indicatorRenderH(0){
         // 初始化颜色属性
-        setIndicatorColorOn(DrawColor::WHITE);
-        setIndicatorColorOff(DrawColor::BLACK);
+        setIndicatorFilledColorOn(DrawColor::BLACK);
+        setIndicatorFilledColorOff(DrawColor::BLACK);
+        setIndicatorFrameColorOn(DrawColor::WHITE);
+        setIndicatorFrameColorOff(DrawColor::WHITE);
         setBgColorOn(DrawColor::WHITE);
         setBgColorOff(DrawColor::WHITE);
-        setChecked(false);  // 默认关闭状态
-        setIndicatorWidthRelative(true);  // 默认使用绝对模式
-        setBgFilled(true);  // 默认填充背景
-        setIndicatorFilled(true);  // 默认填充指示器
+        setChecked(false);
+        setIndicatorWidthRelative(true);
+        setBgOnFilled(true);
+        setBgOffFilled(false);
+        setIndicatorOnFilled(false);
+        setIndicatorOffFilled(false);
     }
 
     ~EOGSSwitchButton() = default;
@@ -85,36 +107,50 @@ public:
         // 计算指示器宽度
         if (isIndicatorWidthRelative) {
             // 使用相对模式，indicatorWidth是相对于开关宽度的比例
-            indicatorRenderW = static_cast<int16_t>((w - 2 * switchPadding) * indicatorWidth);
+            indicatorRenderW = static_cast<int16_t>((w - paddingLeft - paddingRight) * indicatorWidth);
         } else {
             // 使用绝对模式，indicatorWidth是实际像素值
             indicatorRenderW = static_cast<int16_t>(indicatorWidth);
         }
         
         // 确保指示器宽度不会超过开关宽度减去内边距 且 确保指示器宽度至少为1
-        indicatorRenderW = mathClamp(indicatorRenderW, 1, w - 2 * switchPadding);
+        indicatorRenderW = mathClamp(indicatorRenderW, 1, w - paddingLeft - paddingRight);
         // 计算指示器高度
-        indicatorRenderH = h - 2 * switchPadding;
+        indicatorRenderH = h - paddingTop - paddingBottom;
         
         // 计算指示器位置
-        indicatorRenderX = isChecked ?
-            (renderX + w - indicatorRenderW - switchPadding) :
-            (renderX + switchPadding);
-        indicatorRenderY = renderY + switchPadding;
+        // 动画模式下，indicatorRenderX 由 render() 中的动画插值计算
+
+        indicatorRenderX = renderX + paddingLeft+indicatorAnimOffsetX;
+        indicatorRenderY = renderY + paddingTop;
         
         return true;
     }
 
     void render(EOGS* eogs, int16_t parentRX, int16_t parentRY, int16_t parentW, int16_t parentH) override {
         if (!visible || eogs == nullptr) return;
-        updateDimension(parentW, parentH);
+        if(updateDimension(parentW, parentH)) requestIndicatorDimensionUpdate();
         updateRenderPos(eogs, parentRX, parentRY, parentW, parentH);
+        if (indicatorAnimation.isRunning()) {
+            float progress = indicatorAnimation.getProgress();
+            int16_t startPos = 0;
+            int16_t endPos = 0;
+            if(isChecked){
+                endPos = w - indicatorRenderW - paddingRight - paddingLeft;
+            }else{
+                startPos = w - indicatorRenderW - paddingRight - paddingLeft;
+            }
+            indicatorAnimOffsetX = startPos + progress * (endPos - startPos);
+            requestIndicatorDimensionUpdate();
+        }
+        indicatorAnimation.update(eogs);
         updateIndicatorDimension();
+
 
         if (insideOfRenderArea || renderOutsideOfRenderArea) {
             // 绘制开关背景
             eogs->setDrawColor(isChecked ? bgColorOn : bgColorOff);
-            if (bgFilled) {
+            if (isChecked ? bgOnFilled : bgOffFilled) {
                 // 填充背景
                 if (bgRadius > 0) {
                     // 使用圆角绘制填充背景
@@ -134,10 +170,9 @@ public:
                 }
             }
             
-            // 绘制开关指示器
-            eogs->setDrawColor(isChecked ? indicatorColorOn : indicatorColorOff);
-            if (indicatorFilled) {
+            if (isChecked ? indicatorOnFilled : indicatorOffFilled) {
                 // 填充指示器
+                eogs->setDrawColor(isChecked ? indicatorFilledColorOn : indicatorFilledColorOff);
                 if (indicatorRadius > 0) {
                     // 使用圆角绘制填充指示器
                     eogs->drawRBox(indicatorRenderX, indicatorRenderY, indicatorRenderW, indicatorRenderH, indicatorRadius);
@@ -149,9 +184,15 @@ public:
                 // 绘制指示器边框
                 if (indicatorRadius > 0) {
                     // 使用圆角绘制指示器边框
+                    eogs->setDrawColor(isChecked ? indicatorFilledColorOn : indicatorFilledColorOff);
+                    eogs->drawRBox(indicatorRenderX, indicatorRenderY, indicatorRenderW, indicatorRenderH, indicatorRadius);
+                    eogs->setDrawColor(isChecked ? indicatorFrameColorOn : indicatorFrameColorOff);
                     eogs->drawRFrame(indicatorRenderX, indicatorRenderY, indicatorRenderW, indicatorRenderH, indicatorRadius);
                 } else {
                     // 使用普通矩形绘制指示器边框
+                    eogs->setDrawColor(isChecked ? indicatorFilledColorOn : indicatorFilledColorOff);
+                    eogs->drawBox(indicatorRenderX, indicatorRenderY, indicatorRenderW, indicatorRenderH);
+                    eogs->setDrawColor(isChecked ? indicatorFrameColorOn : indicatorFrameColorOff);
                     eogs->drawFrame(indicatorRenderX, indicatorRenderY, indicatorRenderW, indicatorRenderH);
                 }
             }
@@ -164,21 +205,33 @@ public:
     EOGSSwitchButton* setChecked(bool checked) {
         if (isChecked != checked) {
             isChecked = checked;
-            indicatorDimensionUpdated = false; // 状态改变时需要更新指示器位置
+            indicatorAnimation.start();
         }
         return this;
     }
 
     // 颜色设置
-    DrawColor getIndicatorColorOn() const { return indicatorColorOn; }
-    EOGSSwitchButton* setIndicatorColorOn(DrawColor color) {
-        indicatorColorOn = color;
+    DrawColor getIndicatorFrameColorOn() const { return indicatorFrameColorOn; }
+    EOGSSwitchButton* setIndicatorFrameColorOn(DrawColor color) {
+        indicatorFrameColorOn = color;
         return this;
     }
     
-    DrawColor getIndicatorColorOff() const { return indicatorColorOff; }
-    EOGSSwitchButton* setIndicatorColorOff(DrawColor color) {
-        indicatorColorOff = color;
+    DrawColor getIndicatorFrameColorOff() const { return indicatorFrameColorOff; }
+    EOGSSwitchButton* setIndicatorFrameColorOff(DrawColor color) {
+        indicatorFrameColorOff = color;
+        return this;
+    }
+
+    DrawColor getIndicatorFilledColorOn() const { return indicatorFilledColorOn; }
+    EOGSSwitchButton* setIndicatorFilledColorOn(DrawColor color) {
+        indicatorFilledColorOn = color;
+        return this;
+    }
+    
+    DrawColor getIndicatorFilledColorOff() const { return indicatorFilledColorOff; }
+    EOGSSwitchButton* setIndicatorFilledColorOff(DrawColor color) {
+        indicatorFilledColorOff = color;
         return this;
     }
     
@@ -195,32 +248,94 @@ public:
     }
     
     // 背景填充设置
-    bool getBgFilled() const { return bgFilled; }
-    EOGSSwitchButton* setBgFilled(bool filled) {
-        bgFilled = filled;
+    bool getBgOnFilled() const { return bgOnFilled; }
+    EOGSSwitchButton* setBgOnFilled(bool filled) {
+        bgOnFilled = filled;
         return this;
     }
     
+    bool getBgOffFilled() const { return bgOffFilled; }
+    EOGSSwitchButton* setBgOffFilled(bool filled) {
+        bgOffFilled = filled;
+        return this;
+    }
+
     // 指示器填充设置
-    bool getIndicatorFilled() const { return indicatorFilled; }
-    EOGSSwitchButton* setIndicatorFilled(bool filled) {
-        indicatorFilled = filled;
+    bool getIndicatorOnFilled() const { return indicatorOnFilled; }
+    EOGSSwitchButton* setIndicatorOnFilled(bool filled) {
+        indicatorOnFilled = filled;
+        return this;
+    }
+
+    bool getIndicatorOffFilled() const { return indicatorOffFilled; }
+    EOGSSwitchButton* setIndicatorOffFilled(bool filled) {
+        indicatorOffFilled = filled;
         return this;
     }
     
     // 内边距设置
-    int16_t getSwitchPadding() const { return switchPadding; }
-    EOGSSwitchButton* setSwitchPadding(int16_t padding) {
-        if (switchPadding != padding) {
-            switchPadding = padding;
+    int16_t getPadding() const { return paddingTop; }
+    EOGSSwitchButton* setPadding(int16_t padding) {
+        if (paddingTop != padding || paddingRight != padding || paddingBottom != padding || paddingLeft != padding) {
+            paddingTop = padding;
+            paddingRight = padding;
+            paddingBottom = padding;
+            paddingLeft = padding;
             indicatorDimensionUpdated = false; // 内边距改变时需要更新指示器位置
+        }
+        return this;
+    }
+
+    int16_t getPaddingTop() const { return paddingTop; }
+    EOGSSwitchButton* setPaddingTop(int16_t padding) {
+        if (paddingTop != padding) {
+            paddingTop = padding;
+            indicatorDimensionUpdated = false;
+        }
+        return this;
+    }
+
+    int16_t getPaddingRight() const { return paddingRight; }
+    EOGSSwitchButton* setPaddingRight(int16_t padding) {
+        if (paddingRight != padding) {
+            paddingRight = padding;
+            indicatorDimensionUpdated = false;
+        }
+        return this;
+    }
+
+    int16_t getPaddingBottom() const { return paddingBottom; }
+    EOGSSwitchButton* setPaddingBottom(int16_t padding) {
+        if (paddingBottom != padding) {
+            paddingBottom = padding;
+            indicatorDimensionUpdated = false;
+        }
+        return this;
+    }
+
+    int16_t getPaddingLeft() const { return paddingLeft; }
+    EOGSSwitchButton* setPaddingLeft(int16_t padding) {
+        if (paddingLeft != padding) {
+            paddingLeft = padding;
+            indicatorDimensionUpdated = false;
+        }
+        return this;
+    }
+
+    EOGSSwitchButton* setPadding(int16_t top, int16_t right, int16_t bottom, int16_t left) {
+        if (paddingTop != top || paddingRight != right || paddingBottom != bottom || paddingLeft != left) {
+            paddingTop = top;
+            paddingRight = right;
+            paddingBottom = bottom;
+            paddingLeft = left;
+            indicatorDimensionUpdated = false;
         }
         return this;
     }
     
     // 圆角半径设置
     int16_t getbgRadius() const { return bgRadius; }
-    EOGSSwitchButton* setbgRadius(int16_t radius) {
+    EOGSSwitchButton* setBgRadius(int16_t radius) {
         bgRadius = radius;
         return this;
     }

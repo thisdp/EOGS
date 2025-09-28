@@ -82,6 +82,12 @@ void EOGSWidgetBase::setParent(EOGSWidgetBase* _parent, bool isUpdateChild) {
     }
 }
 
+EOGSWidgetBase::~EOGSWidgetBase() {
+    off();  // 在析构时自动清除该对象的所有监听器
+    if(parent != nullptr && parent->isContainer())
+        parent->removeChild(this);
+}
+
 void EOGSWidgetBase::setVisible(bool _visible) {
     visible = _visible;
 }
@@ -139,3 +145,58 @@ void EOGSWidgetBase::addAnimToEOGS(void* anim) {
     EOGS* pEOGS = getEOGS();
     if (pEOGS != nullptr) pEOGS->addAnimation(static_cast<EOGSAnimBase*>(anim));
 }
+
+// 事件系统实现
+std::map<EOGSEventID, std::map<uint32_t, std::map<uint32_t, std::function<void(EOGSEvent*)>>>> EOGSWidgetBase::eventMap;  // 静态事件映射，按事件ID、对象ID和索引存储
+uint32_t EOGSWidgetBase::nextId = 0;  // 初始化nextId
+uint32_t EOGSWidgetBase::nextCallbackId = 0;  // 初始化nextCallbackId
+
+uint32_t EOGSWidgetBase::on(const EOGSEventID event, std::function<void(EOGSEvent*)> callback) {
+    uint32_t callbackId = nextCallbackId++;
+    eventMap[event][id][callbackId] = callback;
+    return callbackId;
+}
+
+EOGSEvent EOGSWidgetBase::makeTrigger(const EOGSEventID event) {
+    return EOGSEvent(event, this);
+}
+
+void EOGSWidgetBase::trigger(EOGSEvent *event) {
+    if (event == nullptr) return;
+    auto it = eventMap.find(event->eventId);
+    if (it == eventMap.end()) return;
+    auto objectIt = it->second.find(id);  // 只查找this对象的监听器
+    if (objectIt == it->second.end()) return;
+    for (const auto& pair : objectIt->second) { //一个event可能被附加了多个，遍历
+        pair.second(event);  // 传递this指针和事件对象
+    }
+}
+
+void EOGSWidgetBase::off(const EOGSEventID event) {
+    auto it = eventMap.find(event);
+    if (it == eventMap.end()) return;
+    // 清空当前对象的该事件的所有监听器
+    it->second.erase(id);
+}
+
+void EOGSWidgetBase::off(const EOGSEventID event, uint32_t callbackId) {
+    auto it = eventMap.find(event);
+    if (it == eventMap.end()) return;
+    // 清空当前对象的该事件的指定callback的监听器
+    auto& objectCallbacks = it->second;  // std::map<uint32_t, std::map<uint32_t, std::function<void()>>>
+    auto objectIt = objectCallbacks.find(id);
+    if (objectIt == objectCallbacks.end()) return;
+    
+    // 通过索引删除指定的回调函数
+    auto& callbacks = objectIt->second;  // std::map<uint32_t, std::function<void()>>
+    callbacks.erase(callbackId);
+}
+
+void EOGSWidgetBase::off() {
+    for (auto& eventListeners : eventMap) {
+        eventListeners.second.erase(id);  // 移除this对象的所有监听器
+    }
+}
+
+//事件系统
+EOGSEvent::EOGSEvent(EOGSEventID id, EOGSWidgetBase *src) : eventId(id), source(src) {}

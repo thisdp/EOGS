@@ -30,7 +30,7 @@ protected:
     uint8_t scrollBarReference : 1;           // (scrollBarReference=0, Refer to viewOffset, scrollBarReference=1, Refer to selectIndex)
     uint8_t scrollBarThumbAutoAdjust : 1;     // 滚动条是否自动调整滑块
     uint8_t scrollBarThumbSizeRatioUpdated : 1;   // 滚动条滑块是否已更新
-    uint8_t subMenuNavigationDirection : 1;     // 子菜单导航方向（用于动画）
+    uint8_t subItemMenuNavigationDirection : 1;     // 子菜单导航方向（用于动画）
     int16_t defaultItemHeight;
     // 选择框相关变量
     EOGSAnimBase selectionAnimation;          // 选择框动画
@@ -53,7 +53,7 @@ protected:
     EOGSAnimBase scrollAnimation;             // 滚动动画
 
     // 子菜单切换相关变量
-    EOGSAnimBase subMenuNavigationAnimation;  // 子菜单切换动画
+    EOGSAnimBase subItemMenuNavigationAnimation;  // 子菜单切换动画
     EOGSMenuItem* currentMenuItem;            // 当前选中的菜单项
     EOGSMenuItem* prevMenuItem;               // 上一个菜单项（用于过渡）
 
@@ -88,7 +88,7 @@ public:
           scrollStartOffset(0),
           scrollTargetOffset(0),
           scrollAnimation(250, EOGSBuiltInEasing::OutSine()),
-          subMenuNavigationAnimation(500,EOGSBuiltInEasing::InOutSine()),
+          subItemMenuNavigationAnimation(500,EOGSBuiltInEasing::InOutSine()),
           currentMenuItem(this), prevMenuItem(this),
           scrollBarVertical(_w-8,0,8,_h,false,true){}
 
@@ -104,8 +104,6 @@ public:
         if(scrollBarThumbSizeRatioUpdated) return false;    //已经最新
         scrollBarThumbSizeRatioUpdated = true;
         if(!scrollBarThumbAutoAdjust) return true;
-        Serial.println(getAbsH());
-        Serial.println(currentMenuItem->getTotalChildrenHeight());
         scrollBarVertical.setThumbSizeRatio(static_cast<float>(getAbsH())/static_cast<float>(currentMenuItem->getTotalChildrenHeight()));
         return true;
     }
@@ -141,18 +139,17 @@ public:
             int16_t shiftInOffset = 0;
             int16_t shiftOutOffset = 0;
             // 更新子菜单切换动画
-            subMenuNavigationAnimation.update(eogs);
-            if(subMenuNavigationAnimation.isRunning()){ //如果动画正在运行
-                Serial.println(subMenuNavigationAnimation.getProgress());
-                if(subMenuNavigationDirection){ //去父菜单，上一菜单往右侧移出
-                    shiftInOffset = -(1-subMenuNavigationAnimation.getProgress())*w;    //-w->0
-                    shiftOutOffset = (subMenuNavigationAnimation.getProgress())*w;      //0->w
+            subItemMenuNavigationAnimation.update(eogs);
+            if(subItemMenuNavigationAnimation.isRunning()){ //如果动画正在运行
+                if(subItemMenuNavigationDirection){ //去父菜单，上一菜单往右侧移出
+                    shiftInOffset = -(1-subItemMenuNavigationAnimation.getProgress())*w;    //-w->0
+                    shiftOutOffset = (subItemMenuNavigationAnimation.getProgress())*w;      //0->w
                 }else{  //去子菜单，上一菜单往左侧移出
-                    shiftInOffset = (1-subMenuNavigationAnimation.getProgress())*w;     //w->0
-                    shiftOutOffset = -(subMenuNavigationAnimation.getProgress())*w;     //0->-w
+                    shiftInOffset = (1-subItemMenuNavigationAnimation.getProgress())*w;     //w->0
+                    shiftOutOffset = -(subItemMenuNavigationAnimation.getProgress())*w;     //0->-w
                 }
                 // 渲染子上一个菜单的子项
-                const std::vector<EOGSMenuItem*>* prevChildren = prevMenuItem->getChildrenMenuItems();
+                const std::vector<EOGSMenuItem*>* prevChildren = prevMenuItem->getChildMenuItems();
                 int16_t startIndex = prevMenuItem->getTopViewIndex();
                 int16_t endIndex = prevMenuItem->getBottomViewIndex();
                 int16_t viewOffset = prevMenuItem->getViewOffset();
@@ -167,7 +164,7 @@ public:
             // 渲染当前菜单
             int16_t startIndex = currentMenuItem->getTopViewIndex();
             int16_t endIndex = currentMenuItem->getBottomViewIndex();
-            const std::vector<EOGSMenuItem*>* currentChildrenItems = currentMenuItem->getChildrenMenuItems();
+            const std::vector<EOGSMenuItem*>* currentChildrenItems = currentMenuItem->getChildMenuItems();
             int16_t viewOffset = currentMenuItem->getViewOffset();
             int16_t selected = currentMenuItem->getSelectedSubItemIndex();
             bool selectedAvailable = (selected >= 0 && selected < static_cast<int16_t>(currentChildrenItems->size()));
@@ -276,7 +273,7 @@ public:
     EOGSMenu* setNavigateLoop(bool loop) { navigateLoop = loop; return this; }
     bool getNavigateLoop() const { return navigateLoop; }
 // 选择
-    EOGSMenu* setSelectedSubItemIndex(int16_t index){ return itemNavigate(index); }
+    EOGSMenu* setSelectedSubItemIndex(int16_t index){ return subItemNavigateTo(index); }
     int16_t getSelectedSubItemIndex() const { return currentMenuItem->getSelectedSubItemIndex(); }
     EOGSMenuItem *getSelectedSubItem() const { return currentMenuItem->getSelectedSubItem(); }
 //选择框水平扩展
@@ -292,19 +289,19 @@ public:
         return this;
     }
 // 导航
-    EOGSMenu* itemNavigateUp() {
+    EOGSMenu* subItemNavigateUp() {
         int16_t currentIndex = getSelectedSubItemIndex();
         int16_t targetIndex = findNextSelectableIndex(currentIndex, false);  // 向前查找
         if(targetIndex != -1) {
-            return itemNavigate(targetIndex);
+            return subItemNavigateTo(targetIndex);
         }
         return this;
     }
-    EOGSMenu* itemNavigateDown() {
+    EOGSMenu* subItemNavigateDown() {
         int16_t currentIndex = getSelectedSubItemIndex();
         int16_t targetIndex = findNextSelectableIndex(currentIndex, true);  // 向后查找
         if(targetIndex != -1) {
-            return itemNavigate(targetIndex);
+            return subItemNavigateTo(targetIndex);
         }
         return this;
     }
@@ -312,7 +309,7 @@ public:
     // 从指定index开始，查找下一个可选的index
     int16_t findNextSelectableIndex(int16_t startIndex, bool forward = true) {
         if(currentMenuItem == nullptr) return -1;
-        const std::vector<EOGSMenuItem*>* items = currentMenuItem->getChildrenMenuItems();
+        const std::vector<EOGSMenuItem*>* items = currentMenuItem->getChildMenuItems();
         int16_t itemCount = static_cast<int16_t>(items->size());
         if(itemCount == 0) return -1;
         int16_t currentIndex = startIndex;
@@ -344,9 +341,9 @@ public:
         return -1;  // 没有找到可选项
     }
     
-    EOGSMenu* itemNavigate(int16_t targetIndex){
+    EOGSMenu* subItemNavigateTo(int16_t targetIndex){
         if(currentMenuItem == nullptr) return this;
-        const std::vector<EOGSMenuItem*>* items = currentMenuItem->getChildrenMenuItems();
+        const std::vector<EOGSMenuItem*>* items = currentMenuItem->getChildMenuItems();
         int16_t itemCount = static_cast<int16_t>(items->size());
         if(itemCount == 0) return this;
         if(navigateLoop) {  //循环模式
@@ -395,15 +392,14 @@ public:
         scrollAnimation.start();
         return this;
     }
-
 // 导航至菜单
-    EOGSMenu* subMenuNavigateTo(EOGSMenuItem* item) {
+    EOGSMenu* subItemNavigateInto(EOGSMenuItem* item) {
         if(item == nullptr) return this;
         if(!item->getEnterable()) return this;  // 不可进入
-        if(item->getChildrenMenuItems()->size() == 0) return this;   //无子项目，不可进入
-        subMenuNavigationDirection = 0;
+        if(item->getChildMenuItems()->size() == 0) return this;   //无子项目，不可进入
+        subItemMenuNavigationDirection = 0;
         if(currentMenuItem != nullptr){
-            subMenuNavigationDirection = currentMenuItem->isParentMenuItem(item);    //如果是父级，则往右滑动，否则往左滑动
+            subItemMenuNavigationDirection = currentMenuItem->isParentMenuItem(item);    //如果是父级，则往右滑动，否则往左滑动
         }
 
         prevMenuItem = currentMenuItem;
@@ -413,8 +409,7 @@ public:
         scrollTargetOffset = currentMenuItem->getViewOffset();  //直接切换
         //scrollAnimation.start();
         //导航后加入子菜单切换动画
-        Serial.println(subMenuNavigationDirection);
-        subMenuNavigationAnimation.start();
+        subItemMenuNavigationAnimation.start();
 
         
         selectionStartX = selectionX;
@@ -424,14 +419,24 @@ public:
         selectionAnimation.start();
         return this;
     }
+// 导航至当前选中菜单
+    EOGSMenu* subItemNavigateIntoCurrent() { 
+        subItemNavigateInto(getSelectedSubItem());
+        return this;
+    }
 // 返回上级菜单
-    EOGSMenu* subMenuNavigateToParent() {
+    EOGSMenu* subItemNavigateIntoParent() {
         if(currentMenuItem == this) return this;    // 当前菜单为根菜单，不再返回上级菜单
         EOGSMenuItem *parentItem = currentMenuItem->getParentMenuItem();
         //可能需要考虑上级菜单无法进入的问题? todo
-        if(parentItem == nullptr) return this;  // 当前菜单没有父菜单，无法返回上级菜单
-        subMenuNavigateTo(parentItem);  //导航至目标菜单
+        subItemNavigateInto(parentItem);  //导航至目标菜单
         return this;
+    }
+// 查询当前选中菜单是否可进入
+    bool canSubItemNavigateInto() {
+        if(currentMenuItem == this) return true;    // 当前菜单为根菜单，可进入
+        EOGSMenuItem *parentItem = currentMenuItem->getParentMenuItem();
+        return parentItem->getEnterable();  //上级菜单可进入
     }
 // 滚动条滑块参考 (ScrollBarRefViewOffset/ScrollBarRefSelectIndex)
     bool getScrollBarReference() const { return scrollBarReference; }

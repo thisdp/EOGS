@@ -43,7 +43,7 @@
 class EOGSMenuSubItem;
 class EOGSMenuItem : public EOGSWidget<EOGSMenuItem> {
 protected:
-    std::vector<EOGSMenuItem*> childrenMenuItems; // 子菜单项列表（菜单系统中的childrenItem）
+    std::vector<EOGSMenuItem*> childMenuItems; // 子菜单项列表（菜单系统中的childrenItem）
     std::vector<EOGSWidgetBase*> children;  // 子级元素列表
     //菜单上下文
     int16_t selectedIndex;      // 当前选中的项索引，动画由menu完成
@@ -57,16 +57,17 @@ protected:
     DrawColor selectedTextColor;
     DrawColor imageColor;
     DrawColor selectedImageColor;
-public:
+public:    
     // 构造函数
     EOGSMenuItem(float _x, float _y, float _w, float _h, bool _isRelative = false)
         : EOGSWidget<EOGSMenuItem>(_x, _y, _w, _h, _isRelative),
         selectedIndex(-1), topViewIndex(0), bottomViewIndex(0), viewOffset(0),
         paddingLeftOrTop(2), paddingRightOrBottom(2){}
     // 析构函数
-    ~EOGSMenuItem() { for (EOGSMenuItem* childItem : childrenMenuItems) { if (childItem) delete childItem; } childrenMenuItems.clear(); }
+    ~EOGSMenuItem() { for (EOGSMenuItem* childItem : childMenuItems) { if (childItem) delete childItem; } childMenuItems.clear(); }
     // 重写基类方法，明确标记为Container
-    bool isContainer() const override { return true; } 
+    bool isContainer() const override { return true; }
+
     std::vector<EOGSWidgetBase*>* getChildren() override { return &children; }
 
     virtual EOGSMenuItem* setSelected(bool selected) { return this; }
@@ -126,7 +127,7 @@ public:
         if(childPositionUpdated) return false;
         childPositionUpdated = true;
         int16_t cumulativeHeight = 0;
-        for (EOGSMenuItem* child : childrenMenuItems) {
+        for (EOGSMenuItem* child : childMenuItems) {
             if (child != nullptr) {
                 child->setY(cumulativeHeight, false);   // 更新子项的Y坐标
                 int16_t childHeight = child->getAbsH(); // 累计总高度
@@ -138,9 +139,9 @@ public:
     }
 
     int16_t getTotalChildrenHeight() const {
-        if (childrenMenuItems.empty()) return 0;
-        int16_t childY = childrenMenuItems[childrenMenuItems.size() - 1]->getAbsY();
-        return childY + childrenMenuItems[childrenMenuItems.size() - 1]->getAbsH();
+        if (childMenuItems.empty()) return 0;
+        int16_t childY = childMenuItems[childMenuItems.size() - 1]->getAbsY();
+        return childY + childMenuItems[childMenuItems.size() - 1]->getAbsH();
     }
 // 根菜单
     virtual EOGSMenuItem* getRootMenuItem() { return nullptr; }
@@ -162,9 +163,6 @@ public:
         if(item == this) return false;  // 避免自身
         EOGSMenuItem* parentItem = this;
         while(1){
-            Serial.println("-----");
-            Serial.println((uint32_t)parentItem);
-            Serial.println((uint32_t)parentItem->getParentMenuItem());
             if(parentItem == parentItem->getParentMenuItem()) return false;   // 追溯到根节点，仍然未找到
             parentItem = parentItem->getParentMenuItem();
             if(parentItem == this || parentItem == nullptr) return false;  // 避免自身
@@ -173,12 +171,12 @@ public:
         return false;
     }
 // 子菜单
-    const std::vector<EOGSMenuItem*>* getChildrenMenuItems() { return &childrenMenuItems; }
+    const std::vector<EOGSMenuItem*>* getChildMenuItems() { return &childMenuItems; }
     void addChildMenuItem(EOGSMenuItem* child, bool isUpdateParentItem = true) {
         if (child == nullptr) return;
         if (child->getParentMenuItem() != nullptr) child->getParentMenuItem()->removeChildMenuItem(child);
         if(isUpdateParentItem) child->setParentMenuItem(this,false);
-        childrenMenuItems.push_back(child);
+        childMenuItems.push_back(child);
         child->setParent(getRootMenuItem());
         child->setH(getDefaultItemHeight(),false);
         child->requestDimensionUpdate(true); //强制更新高度
@@ -188,12 +186,12 @@ public:
     }
     void removeChildMenuItem(EOGSMenuItem* child, bool isUpdateParentItem = true) {
         if (child == nullptr) return;
-        auto it = std::find(childrenMenuItems.begin(), childrenMenuItems.end(), child);
-        if (it != childrenMenuItems.end()){
+        auto it = std::find(childMenuItems.begin(), childMenuItems.end(), child);
+        if (it != childMenuItems.end()){
             //如果当前选中的item是自己，则移动至上一个item
             if(child == getSelectedSubItem()) selectedIndex = selectedIndex - 1;
             if(isUpdateParentItem) child->setParentMenuItem(nullptr,false);
-            childrenMenuItems.erase(it);
+            childMenuItems.erase(it);
             child->setParent(nullptr);
             requestViewRangeUpdate();   //Child数量变化，重新计算视图区域
             requestChildrenHeightUpdate();  //Child数量变化 重新计算所有Children的高度
@@ -209,17 +207,17 @@ public:
     int16_t getPreviousSelectedSubItemIndex() const { return previousSelectedIndex; }
     EOGSMenuItem* getSelectedSubItem() const {
         if(selectedIndex < 0) return nullptr;   //没有选中任何子项
-        if(selectedIndex >= childrenMenuItems.size()) return nullptr;   //选项超出范围
-        return childrenMenuItems[selectedIndex];
+        if(selectedIndex >= childMenuItems.size()) return nullptr;   //选项超出范围
+        return childMenuItems[selectedIndex];
     }
     int16_t getSelectedSubItemIndex() const { return selectedIndex; }
     void setSelectedSubItemIndex(int16_t index) {
         if(selectedIndex == index) return;
         if(index < -1) index = -1;
-        int16_t childrenCount = static_cast<int>(childrenMenuItems.size());
+        int16_t childrenCount = static_cast<int>(childMenuItems.size());
         if(index >= childrenCount) index = childrenCount - 1;
-        if(selectedIndex != -1) childrenMenuItems[selectedIndex]->setSelected(false);
-        if(index != -1) childrenMenuItems[index]->setSelected(true);
+        if(selectedIndex != -1) childMenuItems[selectedIndex]->setSelected(false);
+        if(index != -1) childMenuItems[index]->setSelected(true);
         previousSelectedIndex = selectedIndex;
         selectedIndex = index;
     }
@@ -239,8 +237,8 @@ public:
     EOGSMenuSubItem* createSubItem(Args&&... args);
 
     std::pair<int16_t, int16_t> findVisibleItem() {
-        if (childrenMenuItems.empty()) return std::make_pair(0, -1);
-        int16_t itemCount = static_cast<int16_t>(childrenMenuItems.size());
+        if (childMenuItems.empty()) return std::make_pair(0, -1);
+        int16_t itemCount = static_cast<int16_t>(childMenuItems.size());
         int16_t visibleTop = viewOffset;
         int16_t visibleBottom = viewOffset + getMenuHeight();
         // === 二分查找 top，并记录其 y 坐标 ===
@@ -249,8 +247,8 @@ public:
         int16_t left = 0, right = itemCount - 1;
         while (left <= right) {
             int16_t mid = left + (right - left) / 2;
-            int16_t y = childrenMenuItems[mid]->getAbsY();  // 使用预计算的Y坐标
-            int16_t itemBottom = y + childrenMenuItems[mid]->getAbsH();
+            int16_t y = childMenuItems[mid]->getAbsY();  // 使用预计算的Y坐标
+            int16_t itemBottom = y + childMenuItems[mid]->getAbsH();
             if (itemBottom > visibleTop) {
                 top = mid;
                 topY = y;
@@ -264,7 +262,7 @@ public:
         int16_t currentY = topY;
         int16_t bottom = top;
         while (bottom < itemCount) {
-            int16_t itemH = childrenMenuItems[bottom]->getAbsH();
+            int16_t itemH = childMenuItems[bottom]->getAbsH();
             if (currentY >= visibleBottom) break;
             currentY += itemH;
             ++bottom;

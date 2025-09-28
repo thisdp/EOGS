@@ -70,11 +70,12 @@ public:
         renderY = parentRY+y;
         insideOfRenderArea = !isOutsideOfParent(parentW, parentH);
         if(percentageLabel != nullptr) percentageLabel->requestDimensionUpdate(); //如果坐标更新，则需要同步更新label的尺寸
-        indicatorDimensionUpdated = false;  //如果更新了尺寸，则需要更新指示器
+        requestIndicatorDimensionUpdate();  //如果更新了尺寸，则需要更新指示器
         return true;
     }
 
     // 更新指示器缓存
+    void requestIndicatorDimensionUpdate() { indicatorDimensionUpdated = false; }
     bool updateIndicatorDimension(EOGS* eogs) {
         if (indicatorDimensionUpdated) return false;
         indicatorDimensionUpdated = true;
@@ -143,7 +144,7 @@ public:
         float oldProgress = progress;
         progress = mathClamp(val, minProgress, maxProgress);
         // 使指示器缓存无效
-        indicatorDimensionUpdated = false;
+        requestIndicatorDimensionUpdate();
         if (percentageLabel != nullptr && oldProgress != progress) {
             std::string text;
             if (textFormat) {
@@ -186,20 +187,20 @@ public:
     EOGSRectProgressBar* setIndicatorRadius(uint8_t radius) { indicatorRadius = radius; return this; }
     EOGSRectProgressBar* setIndicatorPadding(int16_t padding) {
         indicatorPaddingTop = padding, indicatorPaddingRight = padding, indicatorPaddingBottom = padding, indicatorPaddingLeft = padding;
-        indicatorDimensionUpdated = false;
+        requestIndicatorDimensionUpdate();
         return this;
     }
     EOGSRectProgressBar* setIndicatorPadding(int16_t top, int16_t right, int16_t bottom, int16_t left) {
         indicatorPaddingTop = top, indicatorPaddingRight = right, indicatorPaddingBottom = bottom, indicatorPaddingLeft = left;
-        indicatorDimensionUpdated = false;
+        requestIndicatorDimensionUpdate();
         return this;
     }
 
     // 单独设置各个方向的padding
-    EOGSRectProgressBar* setIndicatorPaddingLeft(int16_t left) { indicatorPaddingLeft = left; indicatorDimensionUpdated = false; return this; }
-    EOGSRectProgressBar* setIndicatorPaddingRight(int16_t right) { indicatorPaddingRight = right; indicatorDimensionUpdated = false; return this; }
-    EOGSRectProgressBar* setIndicatorPaddingTop(int16_t top) { indicatorPaddingTop = top; indicatorDimensionUpdated = false; return this; }
-    EOGSRectProgressBar* setIndicatorPaddingBottom(int16_t bottom) { indicatorPaddingBottom = bottom; indicatorDimensionUpdated = false; return this; }
+    EOGSRectProgressBar* setIndicatorPaddingLeft(int16_t left) { indicatorPaddingLeft = left; requestIndicatorDimensionUpdate(); return this; }
+    EOGSRectProgressBar* setIndicatorPaddingRight(int16_t right) { indicatorPaddingRight = right; requestIndicatorDimensionUpdate(); return this; }
+    EOGSRectProgressBar* setIndicatorPaddingTop(int16_t top) { indicatorPaddingTop = top; requestIndicatorDimensionUpdate(); return this; }
+    EOGSRectProgressBar* setIndicatorPaddingBottom(int16_t bottom) { indicatorPaddingBottom = bottom; requestIndicatorDimensionUpdate(); return this; }
     // 获取padding值的方法
     int16_t getIndicatorPaddingTop() const { return indicatorPaddingTop; }
     int16_t getIndicatorPaddingRight() const { return indicatorPaddingRight; }

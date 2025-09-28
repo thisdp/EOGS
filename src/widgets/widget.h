@@ -8,15 +8,40 @@
 #include <vector>
 #include <algorithm>
 #include <stdexcept>
+#include <functional>
+#include <map>
 #include "../EOGS_hal/EOGS_hal.h"
 #define mathClamp(x,min,max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
 
+class EOGSWidgetBase;
+
+enum class EOGSEventID : uint32_t {
+    Click = 0, 
+};
+// 事件类声明
+class EOGSEvent {   //基础事件类
+public:
+    EOGSEventID eventId;
+    EOGSWidgetBase *source;
+    EOGSEvent(EOGSEventID id, EOGSWidgetBase *source);
+
+};
 // 前向声明
 class EOGS;
 class EOGSAnimBase;
 // 基础控件类基类
 class EOGSWidgetBase {
 protected:
+    /*  结构:
+        [事件ID] = {
+            [对象ID] = { [索引] = 回调函数 },
+        },
+    */
+    static std::map<EOGSEventID, std::map<uint32_t, std::map<uint32_t, std::function<void(EOGSEvent*)>>>> eventMap;  // 静态事件映射，按事件ID、对象ID和索引存储
+    static uint32_t nextCallbackId;  // 用于生成回调函数的唯一索引
+    static uint32_t nextId;  // 用于生成唯一ID
+
+    uint32_t id;  // 对象的唯一ID
     EOGSWidgetBase* parent;  // 父级元素指针
     float relX, relY, relW, relH;  // 相对坐标和大小
     int16_t renderX, renderY;
@@ -138,10 +163,11 @@ protected:
 
 public:
     EOGSWidgetBase(float _x, float _y, float _w, float _h, bool _isRelative = false)
-        : parent(nullptr),
+        : id(nextId++), parent(nullptr),
         relX(_x), relY(_y), relW(_w), relH(_h),
         renderX(0), renderY(0),
         x(static_cast<int16_t>(_x)), y(static_cast<int16_t>(_y)), w(static_cast<int16_t>(_w)), h(static_cast<int16_t>(_h))
+        
     {
         flags = 0;
         isXRel = _isRelative;
@@ -151,10 +177,18 @@ public:
         visible = true;
     }
 
-    virtual ~EOGSWidgetBase(){ if(parent != nullptr && parent->isContainer()) parent->removeChild(this); };
+    virtual ~EOGSWidgetBase();
     
     // 新Class需要重载的
 public:
+    // 事件系统
+    uint32_t on(const EOGSEventID event, std::function<void(EOGSEvent*)> callback);  // 自动使用this->id作为objectId，返回回调函数的索引
+    EOGSEvent makeTrigger(const EOGSEventID event);  // 根据事件ID生成事件对象
+    void trigger(EOGSEvent* event);  // 触发事件，接受事件对象指针
+    void trigger(const EOGSEventID event);  // 只触发this对象上注册的事件（保持向后兼容）
+    void off(const EOGSEventID event);  // 移除特定事件的所有监听器
+    void off(const EOGSEventID event, uint32_t callbackId);  // 移除特定事件的指定监听器
+    void off();  // 移除this对象的所有监听器
     // 纯虚函数接口
     virtual void render(EOGS* eogs, int16_t parentRX, int16_t parentRY, int16_t parentW, int16_t parentH) = 0;
     virtual bool updateRenderPos(EOGS* eogs, int16_t parentRX, int16_t parentRY, int16_t parentW, int16_t parentH);   //计算渲染位置
