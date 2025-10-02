@@ -2,6 +2,13 @@
 #include "../EOGS.h"
 #include <algorithm>
 
+void EOGSEvent::cancel() {
+    cancelled = true;
+}
+
+bool EOGSEvent::wasCancelled() {
+    return cancelled;
+}
 
 void EOGSWidgetBase::addChild(EOGSWidgetBase* child, bool isUpdateParent) {
     if (isContainer() && child != nullptr){
@@ -147,28 +154,93 @@ void EOGSWidgetBase::addAnimToEOGS(void* anim) {
 }
 
 // 事件系统实现
-std::map<EOGSEventID, std::map<uint32_t, std::map<uint32_t, std::function<void(EOGSEvent*)>>>> EOGSWidgetBase::eventMap;  // 静态事件映射，按事件ID、对象ID和索引存储
+// 使用 vector 保持 (callbackId, EventCallbackInfo) 的有序集合，以支持优先级
+std::map<EOGSEventID, std::map<uint32_t, std::vector<std::pair<uint32_t, EOGSWidgetBase::EventCallbackInfo>>>> EOGSWidgetBase::eventMap;  // 静态事件映射，按事件ID、对象ID和回调向量存储（支持优先级）
 uint32_t EOGSWidgetBase::nextId = 0;  // 初始化nextId
 uint32_t EOGSWidgetBase::nextCallbackId = 0;  // 初始化nextCallbackId
 
-uint32_t EOGSWidgetBase::on(const EOGSEventID event, std::function<void(EOGSEvent*)> callback) {
+uint32_t EOGSWidgetBase::on(const EOGSEventID event, std::function<void(EOGSEvent*)> callback, bool receivePropagate, int priority) {
     uint32_t callbackId = nextCallbackId++;
-    eventMap[event][id][callbackId] = callback;
+    auto &vec = eventMap[event][id];
+    vec.emplace_back(callbackId, EventCallbackInfo(callback, receivePropagate, priority));
+    // 按 priority 降序排序（优先级越大越先执行）。若优先级相等，保持先插入先执行（stable）
+    std::stable_sort(vec.begin(), vec.end(), [](const std::pair<uint32_t, EventCallbackInfo>& a, const std::pair<uint32_t, EventCallbackInfo>& b){
+        return a.second.priority > b.second.priority;
+    });
     return callbackId;
 }
 
 EOGSEvent EOGSWidgetBase::makeTrigger(const EOGSEventID event) {
-    return EOGSEvent(event, this);
+    EOGSEvent ev(event);
+    ev.source = this;
+    ev.self = this;
+    return ev;
 }
 
-void EOGSWidgetBase::trigger(EOGSEvent *event) {
+void EOGSWidgetBase::trigger(EOGSEvent *event, EOGSEventPropagate propagationMode) {
     if (event == nullptr) return;
+    event->self = this;
+
+    // 查找事件映射（可能不存在）
     auto it = eventMap.find(event->eventId);
-    if (it == eventMap.end()) return;
-    auto objectIt = it->second.find(id);  // 只查找this对象的监听器
-    if (objectIt == it->second.end()) return;
-    for (const auto& pair : objectIt->second) { //一个event可能被附加了多个，遍历
-        pair.second(event);  // 传递this指针和事件对象
+    const std::map<uint32_t, std::vector<std::pair<uint32_t, EOGSWidgetBase::EventCallbackInfo>>>* eventEntryPtr = nullptr;
+    if (it != eventMap.end()) eventEntryPtr = &it->second;
+
+    // 先触发当前对象的回调（如果存在）
+    if (eventEntryPtr != nullptr) {
+        auto objIt = eventEntryPtr->find(id);
+        if (objIt != eventEntryPtr->end()) {
+            // objIt->second is now a vector<pair<callbackId, EventCallbackInfo>>
+            for (const auto& pair : objIt->second) {
+                const EventCallbackInfo &info = pair.second;
+                if (info.receivePropagate) {
+                    info.callback(event);
+                    if (event->wasCancelled()) return;  // 如果事件被取消，停止触发
+                }
+            }
+        }
+    }
+
+    // 根据传播模式执行相应的传播逻辑
+    switch (propagationMode) {
+        case EOGSEventPropagate::None:
+            return;
+        case EOGSEventPropagate::Down: {
+            // 向下传播事件
+            if (!isContainer()) return;
+            std::vector<EOGSWidgetBase*>* children = getChildren();
+            if (children == nullptr) return;
+            for (EOGSWidgetBase* child : *children) {
+                if (child != nullptr){
+                    child->trigger(event, EOGSEventPropagate::Down);
+                }
+            }
+            break;
+        }
+        case EOGSEventPropagate::Up: {
+            // 向上传播事件
+            if (parent != nullptr) {
+                parent->trigger(event, EOGSEventPropagate::Up);
+            }
+            break;
+        }
+        case EOGSEventPropagate::Both: {
+            // 双向传播事件：先向上传播，再向下传播
+            if (parent != nullptr) {
+                parent->trigger(event, EOGSEventPropagate::Up);
+            }
+            if (!isContainer()) return;
+            std::vector<EOGSWidgetBase*>* children = getChildren();
+            if (children == nullptr) return;
+            for (EOGSWidgetBase* child : *children) {
+                if (child != nullptr){
+                    child->trigger(event, EOGSEventPropagate::Down);
+                }
+            }
+            break;
+        }
+        default:
+            break;
     }
 }
 
@@ -183,13 +255,11 @@ void EOGSWidgetBase::off(const EOGSEventID event, uint32_t callbackId) {
     auto it = eventMap.find(event);
     if (it == eventMap.end()) return;
     // 清空当前对象的该事件的指定callback的监听器
-    auto& objectCallbacks = it->second;  // std::map<uint32_t, std::map<uint32_t, std::function<void()>>>
+    auto& objectCallbacks = it->second;  // std::map<uint32_t, std::vector<pair<uint32_t, EventCallbackInfo>>>
     auto objectIt = objectCallbacks.find(id);
     if (objectIt == objectCallbacks.end()) return;
-    
-    // 通过索引删除指定的回调函数
-    auto& callbacks = objectIt->second;  // std::map<uint32_t, std::function<void()>>
-    callbacks.erase(callbackId);
+    auto &vec = objectIt->second;
+    vec.erase(std::remove_if(vec.begin(), vec.end(), [&](const std::pair<uint32_t, EventCallbackInfo>& p){ return p.first == callbackId; }), vec.end());
 }
 
 void EOGSWidgetBase::off() {
@@ -199,4 +269,4 @@ void EOGSWidgetBase::off() {
 }
 
 //事件系统
-EOGSEvent::EOGSEvent(EOGSEventID id, EOGSWidgetBase *src) : eventId(id), source(src) {}
+EOGSEvent::EOGSEvent(EOGSEventID id) : eventId(id), source(nullptr), self(nullptr), cancelled(false) {}

@@ -16,28 +16,50 @@
 class EOGSWidgetBase;
 
 enum class EOGSEventID : uint32_t {
-    Click = 0, 
+    Click = 0,
 };
+
+// 事件传播模式枚举
+enum class EOGSEventPropagate {
+    None,     // 不传播事件
+    Up,     // 向上传播事件
+    Down,   // 向下传播事件
+    Both    // 双向传播事件
+};
+
 // 事件类声明
 class EOGSEvent {   //基础事件类
 public:
     EOGSEventID eventId;
     EOGSWidgetBase *source;
-    EOGSEvent(EOGSEventID id, EOGSWidgetBase *source);
-
+    EOGSWidgetBase *self;
+    bool cancelled;
+    EOGSEvent(EOGSEventID id);
+    void cancel();
+    bool wasCancelled();
 };
+
 // 前向声明
 class EOGS;
 class EOGSAnimBase;
 // 基础控件类基类
 class EOGSWidgetBase {
 protected:
+    // 事件回调信息结构体
+    struct EventCallbackInfo {
+        std::function<void(EOGSEvent*)> callback;
+        bool receivePropagate;
+        int priority;
+
+        EventCallbackInfo(std::function<void(EOGSEvent*)> cb, bool prop, int prio = 0) : callback(cb), receivePropagate(prop), priority(prio) {}
+    };
+    
     /*  结构:
         [事件ID] = {
-            [对象ID] = { [索引] = 回调函数 },
+            [对象ID] = [ (callbackId, 回调信息), ... ],
         },
     */
-    static std::map<EOGSEventID, std::map<uint32_t, std::map<uint32_t, std::function<void(EOGSEvent*)>>>> eventMap;  // 静态事件映射，按事件ID、对象ID和索引存储
+    static std::map<EOGSEventID, std::map<uint32_t, std::vector<std::pair<uint32_t, EventCallbackInfo>>>> eventMap;  // 静态事件映射，按事件ID、对象ID和回调向量存储（支持优先级）
     static uint32_t nextCallbackId;  // 用于生成回调函数的唯一索引
     static uint32_t nextId;  // 用于生成唯一ID
 
@@ -182,10 +204,10 @@ public:
     // 新Class需要重载的
 public:
     // 事件系统
-    uint32_t on(const EOGSEventID event, std::function<void(EOGSEvent*)> callback);  // 自动使用this->id作为objectId，返回回调函数的索引
+    // 增加 priority 参数（越大优先级越高）。在添加时将对该对象的回调按优先级排序
+    uint32_t on(const EOGSEventID event, std::function<void(EOGSEvent*)> callback, bool receivePropagate = true, int priority = 0);  // 自动使用this->id作为objectId，返回回调函数的索引
     EOGSEvent makeTrigger(const EOGSEventID event);  // 根据事件ID生成事件对象
-    void trigger(EOGSEvent* event);  // 触发事件，接受事件对象指针
-    void trigger(const EOGSEventID event);  // 只触发this对象上注册的事件（保持向后兼容）
+    void trigger(EOGSEvent* event, EOGSEventPropagate propagationMode = EOGSEventPropagate::None);  // 触发事件，接受事件对象指针
     void off(const EOGSEventID event);  // 移除特定事件的所有监听器
     void off(const EOGSEventID event, uint32_t callbackId);  // 移除特定事件的指定监听器
     void off();  // 移除this对象的所有监听器
@@ -299,4 +321,10 @@ public:
     virtual Derived* setParent(EOGSWidgetBase* _parent, bool isUpdateChild = true) { EOGSWidgetBase::setParent(_parent, isUpdateChild); return static_cast<Derived*>(this); }
     virtual Derived* setVisible(bool _visible) { EOGSWidgetBase::setVisible(_visible); return static_cast<Derived*>(this); }
     virtual Derived* setForceRenderOutsideOfCanvas(bool forceRenderOutsideOfCanvas) { EOGSWidgetBase::setForceRenderOutsideOfCanvas(forceRenderOutsideOfCanvas); return static_cast<Derived*>(this); }
+    // Chainable event API wrappers (covariant return type)
+    virtual Derived* trigger(EOGSEvent* event, EOGSEventPropagate propagationMode = EOGSEventPropagate::None) { EOGSWidgetBase::trigger(event, propagationMode); return static_cast<Derived*>(this); }
+    virtual Derived* trigger(EOGSEvent &event, EOGSEventPropagate propagationMode = EOGSEventPropagate::None) { EOGSWidgetBase::trigger(&event, propagationMode); return static_cast<Derived*>(this); }
+    virtual Derived* off(const EOGSEventID event) { EOGSWidgetBase::off(event); return static_cast<Derived*>(this); }
+    virtual Derived* off(const EOGSEventID event, uint32_t callbackId) { EOGSWidgetBase::off(event, callbackId); return static_cast<Derived*>(this); }
+    virtual Derived* off() { EOGSWidgetBase::off(); return static_cast<Derived*>(this); }
 };

@@ -433,10 +433,12 @@ public:
         return this;
     }
 // 查询当前选中菜单是否可进入
-    bool canSubItemNavigateInto() {
-        if(currentMenuItem == this) return true;    // 当前菜单为根菜单，可进入
-        EOGSMenuItem *parentItem = currentMenuItem->getParentMenuItem();
-        return parentItem->getEnterable();  //上级菜单可进入
+    bool canSelectedSubItemNavigateInto() {
+        if(getSelectedSubItem() == this) return true;    // 当前菜单为根菜单，可进入
+        if(getSelectedSubItem() == nullptr) return false;
+        if(!getSelectedSubItem()->getEnterable()) return false;  // 不可进入
+        if(getSelectedSubItem()->getChildMenuItems()->size() == 0) return false;   //无子项目，不可进入
+        return true;
     }
 // 滚动条滑块参考 (ScrollBarRefViewOffset/ScrollBarRefSelectIndex)
     bool getScrollBarReference() const { return scrollBarReference; }

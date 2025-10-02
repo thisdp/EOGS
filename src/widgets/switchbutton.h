@@ -75,7 +75,7 @@ public:
         setIndicatorFrameColorOff(DrawColor::WHITE);
         setBgColorOn(DrawColor::WHITE);
         setBgColorOff(DrawColor::WHITE);
-        setChecked(false);
+        setState(false);
         setIndicatorWidthRelative(true);
         setBgOnFilled(true);
         setBgOffFilled(false);
@@ -201,8 +201,8 @@ public:
 
 
     // 状态获取和设置
-    bool getChecked() const { return isChecked; }
-    EOGSSwitchButton* setChecked(bool checked) {
+    bool getState() const { return isChecked; }
+    EOGSSwitchButton* setState(bool checked) {
         if (isChecked != checked) {
             isChecked = checked;
             indicatorAnimation.start();
