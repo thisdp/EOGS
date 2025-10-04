@@ -1,5 +1,6 @@
 //
 // Created by thisdp 2025/9/3.
+// Scroll Bar Widget for EOGS
 //
 #pragma once
 

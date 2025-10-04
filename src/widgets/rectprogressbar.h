@@ -1,5 +1,6 @@
 //
 // Created by thisdp 2025/8/24.
+// Rectangle Progress Bar Widget for EOGS
 //
 #pragma once
 

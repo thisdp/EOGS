@@ -55,6 +55,11 @@ protected:
     int16_t indicatorRenderH;     // 指示器渲染高度
 
 public:
+    // 静态函数
+    static void onClick(EOGSEvent* event){  //进入此函数，self一定是EOGSSwitchButton
+        EOGSSwitchButton *switchButton = static_cast<EOGSSwitchButton*>(event->self);
+        switchButton->setState(!switchButton->getState());
+    }
     // 构造函数
     EOGSSwitchButton(float _x, float _y, float _w, float _h, bool _isRelative = false)
         : EOGSWidget<EOGSSwitchButton>(_x, _y, _w, _h, _isRelative),
@@ -81,6 +86,7 @@ public:
         setBgOffFilled(false);
         setIndicatorOnFilled(false);
         setIndicatorOffFilled(false);
+        on(EOGSEventID::Click, onClick);
     }
 
     ~EOGSSwitchButton() = default;

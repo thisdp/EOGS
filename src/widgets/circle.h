@@ -1,5 +1,6 @@
 //
 // Created by thisdp 2025/8/22.
+// Circle Widget for EOGS
 //
 #pragma once
 

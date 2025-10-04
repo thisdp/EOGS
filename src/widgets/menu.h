@@ -1,3 +1,9 @@
+//
+// Created by thisdp 2025/8/26.
+// Menu Widget for EOGS
+//
+#pragma once
+
 #include "../EOGS.h"
 #include "widget.h"
 #include <vector>

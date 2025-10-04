@@ -1,5 +1,6 @@
 //
 // Created by thisdp 2025/8/20.
+// Widget Base for EOGS
 //
 #pragma once
 
