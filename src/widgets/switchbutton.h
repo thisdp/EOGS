@@ -36,7 +36,7 @@
 // Flag 20~21
 #define bgColorOff generalColor20
 
-//切换按钮，兼复选框实现
+//切换按钮
 class EOGSSwitchButton : public EOGSWidget<EOGSSwitchButton> {
 protected:
     int16_t paddingTop;        // 上内边距
