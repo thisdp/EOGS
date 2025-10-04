@@ -43,6 +43,8 @@ public:
     // 获取当前屏幕尺寸
     int16_t getCurrentWidth() const { return currentWidth; }
     int16_t getCurrentHeight() const { return currentHeight; }
+    // 获取默认字体
+    const uint8_t *getDefaultFont();
     // 设置绘制颜色
     void setDrawColor(DrawColor type);
     // 绘制像素点

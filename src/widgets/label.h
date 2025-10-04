@@ -34,167 +34,49 @@ protected:
     
 public:
     // 简化构造函数，使用统一的相对标志
-    EOGSLabel(float _x, float _y, float _w, float _h, bool _isRelative = false,const std::string& _text = "")
-        : EOGSWidget<EOGSLabel>(_x, _y, _w, _h, _isRelative),
-          text(_text), font(u8g2_font_t0_11_tf){
-            setFontTransparent(true);
-            setHAlign(HAlign::LEFT);
-            setVAlign(VAlign::TOP);
-            setScroll(false);   // 当字体超出边界后默认不滚动
-            setClip(false); // 默认不剪裁
-            setColor(DrawColor::WHITE);
-        }
+    EOGSLabel(float _x, float _y, float _w, float _h, bool _isRelative = false,const std::string& _text = "");
 
     ~EOGSLabel() = default;
     
     // 更新控件尺寸和位置
-    bool updateRenderPos(EOGS* eogs, int16_t parentRX, int16_t parentRY, int16_t parentW, int16_t parentH) override {
-        if (renderPosUpdated) return false; renderPosUpdated = true;
+    bool updateRenderPos(EOGS* eogs, int16_t parentRX, int16_t parentRY, int16_t parentW, int16_t parentH) override;
 
-        if (eogs == nullptr) return false;
-        renderX = parentRX+x;
-        renderY = parentRY+y;
+    void requestTextAlignUpdate(bool instant = false);
+    bool updateTextAlign();
 
-        insideOfRenderArea = !isOutsideOfParent(parentW, parentH);
-        requestTextAlignUpdate();  // 位置改变后需要重新计算文本位置
-        return true;
-    }
-
-    void requestTextAlignUpdate(bool instant = false) {
-        textAlignUpdated = false;
-        if(!instant) return;
-        updateTextAlign();
-    }
-    bool updateTextAlign(){
-        if (textAlignUpdated) return false;
-        textAlignUpdated = true;
-
-        switch (hAlign) {
-            case HAlign::CENTER:    textX = static_cast<int16_t>(renderX + (w - textW) / 2);  break;
-            case HAlign::RIGHT:     textX = static_cast<int16_t>(renderX + w - textW);        break;
-            case HAlign::LEFT:
-            default:                textX = static_cast<int16_t>(renderX);                        break;
-        }
-        switch (vAlign) {   //文本默认是左上角为基准
-            case VAlign::CENTER:    textY = static_cast<int16_t>(renderY + (h - textH) / 2); break;
-            case VAlign::BOTTOM:    textY = static_cast<int16_t>(renderY + h - textH);       break;
-            case VAlign::TOP:
-            default:                textY = static_cast<int16_t>(renderY);             break;
-        }
-        return true;
-    }
-
-    void requestTextUpdate(bool instant = false) {
-        textUpdated = false;
-        updateText(getEOGS());
-    }
-    bool updateText(EOGS* eogs) {
-        if (textUpdated) return false;
-        textUpdated = true;  // 标记文本已更新
+    void requestTextUpdate(bool instant = false);
+    bool updateText(EOGS* eogs);
     
-        if (font != nullptr) eogs->setFont(font);
-        textW = isUTF8?eogs->getUTF8FontWidth(text):eogs->getFontWidth(text);
-        textH = eogs->getFontHeight();
-        requestTextAlignUpdate();  // 位置改变后需要重新计算文本位置
-        return true;
-    }
-    
-    void render(EOGS* eogs, int16_t parentRX, int16_t parentRY, int16_t parentW, int16_t parentH) override {
-        if (!visible || eogs == nullptr) return;
-        updateDimension(parentW, parentH);
-        updateText(eogs);
-        updateRenderPos(eogs, parentRX, parentRY, parentW, parentH);
-        updateTextAlign();
-        if(insideOfRenderArea || renderOutsideOfRenderArea){
-            if (!text.empty()){
-                if (font != nullptr) eogs->setFont(font);
-                eogs->setDrawColor(drawColor);
-                eogs->setFontMode(isFontTransparent);
-                if(clip) eogs->setClipWindow(x, y, x+w, y+h);   // 由于使用率不为100%，不缓存
-                if(!scroll){
-                    if(isUTF8) eogs->drawUTF8Text(textX, textY, text);
-                    else eogs->drawText(textX, textY, text);
-                }else{
-                    if(textW <= w){
-                        if(isUTF8) eogs->drawUTF8Text(textX, textY, text);
-                        else eogs->drawText(textX, textY, text);
-                    }else{
-                        int16_t diff = textW - w;
-                        int16_t offset = ((eogs->millis()/100)%(diff+10)) - 5;
-                        offset = mathClamp(offset, 0, diff);
-                        if(isUTF8) eogs->drawUTF8Text(textX, textY, text);
-                        else eogs->drawText(textX, textY, text);
-                    }
-                }
-                if(clip) eogs->setMaxClipWindow();
-            }
-        }
-    }
+    void render(EOGS* eogs, int16_t parentRX, int16_t parentRY, int16_t parentW, int16_t parentH) override;
 // 文本颜色
-    DrawColor getColor() const { return drawColor; }
-    EOGSLabel* setColor(DrawColor _drawColor){
-        drawColor = _drawColor;
-        return this;
-    }
+    DrawColor getColor() const;
+    EOGSLabel* setColor(DrawColor _drawColor);
 // 裁剪
-    bool getClip() const { return clip; }
-    EOGSLabel* setClip(bool _clip){
-        clip = _clip;
-        return this;
-    }
+    bool getClip() const;
+    EOGSLabel* setClip(bool _clip);
 // 滚动
-    bool getScroll() const { return scroll; }
-    EOGSLabel* setScroll(bool _scroll){
-        scroll = _scroll;
-        return this;
-    }
+    bool getScroll() const;
+    EOGSLabel* setScroll(bool _scroll);
 // 文本
-    const std::string& getText() const { return text; }
-    EOGSLabel* setText(const uint32_t _numText){
-        text = std::to_string(_numText);
-        return this;
-    }
-    EOGSLabel* setText(const int32_t _numText){
-        text = std::to_string(_numText);
-        return this;
-    }
-    EOGSLabel* setText(const std::string& _text) {
-        text = _text;
-        requestTextUpdate();  // 文本改变后需要重新计算文本大小
-        return this;
-    }
+    const std::string& getText() const;
+    EOGSLabel* setText(const uint32_t _numText);
+    EOGSLabel* setText(const int32_t _numText);
+    EOGSLabel* setText(const std::string& _text);
 //UTF8标记
-    bool getUTF8Enabled() const { return isUTF8; }
-    EOGSLabel* setUTF8Enabled(bool enabled) { 
-        isUTF8 = enabled;
-        requestTextUpdate();  // UTF8标记改变后需要重新计算文本大小
-        return this;
-    }
+    bool getUTF8Enabled() const;
+    EOGSLabel* setUTF8Enabled(bool enabled);
 // 字体
-    const unsigned char* getFont() const { return font; }
-    EOGSLabel* setFont(const unsigned char* _font) {
-        font = _font;
-        requestTextUpdate();  // 字体改变后需要重新计算文本大小
-        return this;
-    }
+    const unsigned char* getFont() const;
+    EOGSLabel* setFont(const unsigned char* _font);
 // 字体透明
-    bool getFontTransparent() const { return isFontTransparent; }
-    EOGSLabel* setFontTransparent(bool _isFontTransparent) {
-        isFontTransparent = static_cast<uint8_t>(_isFontTransparent);
-        return this;
-    }
+    bool getFontTransparent() const;
+    EOGSLabel* setFontTransparent(bool _isFontTransparent);
 // 文本对齐
-    HAlign getHAlign() const { return hAlign; }
-    EOGSLabel* setHAlign(HAlign align) {
-        hAlign = align;
-        return this;
-    }
+    HAlign getHAlign() const;
+    EOGSLabel* setHAlign(HAlign align);
 
-    VAlign getVAlign() const { return vAlign; }
-    EOGSLabel* setVAlign(VAlign align) {
-        vAlign = align;
-        return this;
-    }
+    VAlign getVAlign() const;
+    EOGSLabel* setVAlign(VAlign align);
     
     
 };
@@ -203,32 +85,20 @@ public:
 class EOGSLabelContainer : public EOGSLabel {
 //构造析构
 public:
-    EOGSLabelContainer(float _x, float _y, float _w, float _h, bool _isRelative = false, const std::string& _text = "")
-        : EOGSLabel(_x, _y, _w, _h, _isRelative, _text) {
-    }
-    
-    ~EOGSLabelContainer() {
-        std::vector<EOGSWidgetBase*>* children = getChildren();
-        for (EOGSWidgetBase* child : *children) {
-            if (child) delete child;
-        }
-        children->clear();
-    }
+    EOGSLabelContainer(float _x, float _y, float _w, float _h, bool _isRelative = false, const std::string& _text = "");
+
+    ~EOGSLabelContainer();
 
 //容器实现
 protected:
     std::vector<EOGSWidgetBase*> children;  // 子级元素列表
 public:
-    bool isContainer() const override { return true; }
-    std::vector<EOGSWidgetBase*>* getChildren() { return &children; }
+    bool isContainer() const override;
+    std::vector<EOGSWidgetBase*>* getChildren();
 
-    void render(EOGS* eogs, int16_t parentRX, int16_t parentRY, int16_t parentW, int16_t parentH) override {
-        if (!visible || eogs == nullptr) return;
-        bool wasDimensionUpdate = !dimensionUpdated;
-        EOGSLabel::render(eogs, parentRX, parentRY, parentW, parentH);
-        renderChildren(eogs,wasDimensionUpdate);
-    }
+    void render(EOGS* eogs, int16_t parentRX, int16_t parentRY, int16_t parentW, int16_t parentH) override;
 };
+
 #undef textUpdated
 #undef textAlignUpdated
 #undef isFontTransparent

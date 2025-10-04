@@ -31,9 +31,13 @@ public:
     }
 
     //屏幕
-    U8G2_EOGS_HAL(U8G2& _u8g2) : EOGS_HAL(255), u8g2Interface(&_u8g2) {}
+    U8G2_EOGS_HAL(U8G2& _u8g2) : EOGS_HAL(), u8g2Interface(&_u8g2) {}
     
     ~U8G2_EOGS_HAL() = default;
+
+    const uint8_t *getDefaultFont() override {
+        return u8g2_font_t0_11_tf;  // 默认字体
+    }
     
     void *getCanvasBuffer() override {
         return u8g2Interface->getBufferPtr();

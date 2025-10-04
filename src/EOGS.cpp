@@ -48,6 +48,11 @@ void EOGS::clear() {
     hal->canvasClear();
 }
 
+// 获取默认字体
+const uint8_t* EOGS::getDefaultFont() {
+    return hal->getDefaultFont();
+}
+
 // 设置绘制颜色类型
 void EOGS::setDrawColor(DrawColor type) {
     hal->setDrawColor(static_cast<uint8_t>(type));

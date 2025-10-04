@@ -45,10 +45,11 @@ public:
 class EOGS_HAL : public EOGS_MCU {
 public:
 
-  EOGS_HAL(uint16_t _arcMaxAngle = 255) : arcMaxAngle(_arcMaxAngle){};
+  EOGS_HAL() : arcMaxAngle(255){};
   virtual ~EOGS_HAL() = default;
-  uint16_t arcMaxAngle = 255;
+  uint16_t arcMaxAngle;
   uint16_t getArcMaxAngle() { return arcMaxAngle; }
+  virtual const uint8_t *getDefaultFont() { return 0; }
 public:
   virtual void *getCanvasBuffer() { return 0; }
   virtual uint16_t getBufferTileHeight() { return 0; }

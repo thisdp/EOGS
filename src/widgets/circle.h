@@ -19,50 +19,23 @@ protected:
     float radius;   // 0 ~ 1
 
 public:
-    EOGSCircle(float _x, float _y, float _w, float _h, bool _isRelative = false, bool _filled = true)
-        : EOGSWidget<EOGSCircle>(_x, _y, _w, _h, _isRelative), radius(1) {
-            filled = _filled;
-            setColor(DrawColor::WHITE);
-        }
+    EOGSCircle(float _x, float _y, float _w, float _h, bool _isRelative = false, bool _filled = true);
+
     ~EOGSCircle() = default;
 
-    bool updateRenderPos(EOGS* eogs, int16_t parentRX, int16_t parentRY, int16_t parentW, int16_t parentH) override {
-        if (renderPosUpdated) return false; renderPosUpdated = true;
-        if (eogs == nullptr) return false;
-        renderX = parentRX+x;
-        renderY = parentRY+y;
-        insideOfRenderArea = !isOutsideOfParent(parentW, parentH);
-        cx = renderX+w/2;
-        cy = renderY+h/2;
-        renderRadius = radius*std::min(w, h)/2;
-        return true;
-    }
+    bool updateRenderPos(EOGS* eogs, int16_t parentRX, int16_t parentRY, int16_t parentW, int16_t parentH) override;
     
-    void render(EOGS* eogs, int16_t parentRX, int16_t parentRY, int16_t parentW, int16_t parentH) override {
-        if (!visible || eogs == nullptr) return;
-        updateDimension(parentW, parentH);
-        updateRenderPos(eogs, parentRX, parentRY, parentW, parentH);
-        if(insideOfRenderArea || renderOutsideOfRenderArea){
-            eogs->setDrawColor(drawColor);
-            if (filled)
-                eogs->drawDisc(cx, cy, renderRadius);
-            else
-                eogs->drawCircle(cx, cy, renderRadius);
-        }
-    }
+    void render(EOGS* eogs, int16_t parentRX, int16_t parentRY, int16_t parentW, int16_t parentH) override;
     
-    DrawColor getColor() const { return drawColor; }
-    EOGSCircle* setColor(DrawColor _drawColor){
-        drawColor = _drawColor;
-        return this;
-    }
+    DrawColor getColor() const;
+    EOGSCircle* setColor(DrawColor _drawColor);
     
-    bool isFilled() const { return filled; }
-    EOGSCircle* setFilled(bool _filled) { filled = _filled; return this; }
-    int16_t getAbsoluteRadius() const { return renderRadius; }
-    float getRelativeRadius() const { return radius; }
-    EOGSCircle* setRelativeRadius(float _radius) { radius = _radius; return this; }
+    bool isFilled() const;
+    EOGSCircle* setFilled(bool _filled);
+    int16_t getAbsoluteRadius() const;
+    float getRelativeRadius() const;
+    EOGSCircle* setRelativeRadius(float _radius);
 };
 
-#undef filled 
+#undef filled
 #undef drawColor
