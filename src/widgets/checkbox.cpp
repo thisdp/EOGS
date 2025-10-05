@@ -39,7 +39,7 @@ EOGSCheckBox::EOGSCheckBox(float _x, float _y, float _w, float _h, bool _isRelat
     setCheckMarkColor(DrawColor::WHITE);
     setChecked(false);
     setSquare(true);  // 默认为正方形
-    on(EOGSEventID::Click, onClick);
+    on(EOGSEvent::Click, onClick);
 }
 
 // 更新控件尺寸和位置

@@ -16,7 +16,7 @@ EOGSRadioButton::EOGSRadioButton(float _x, float _y, float _w, float _h, bool _i
       group(nullptr) {
     setOuterCircleColor(DrawColor::WHITE);
     setInnerCircleColor(DrawColor::WHITE);
-    on(EOGSEventID::Click, onClick);
+    on(EOGSEvent::Click, onClick);
 }
 
 EOGSRadioButton::~EOGSRadioButton() {

@@ -1,14 +1,7 @@
 #include "widget.h"
 #include "../EOGS.h"
+#include "../event/event.h"
 #include <algorithm>
-
-void EOGSEvent::cancel() {
-    cancelled = true;
-}
-
-bool EOGSEvent::wasCancelled() {
-    return cancelled;
-}
 
 void EOGSWidgetBase::addChild(EOGSWidgetBase* child, bool isUpdateParent) {
     if (isContainer() && child != nullptr){
@@ -153,21 +146,26 @@ void EOGSWidgetBase::addAnimToEOGS(void* anim) {
     if (pEOGS != nullptr) pEOGS->addAnimation(static_cast<EOGSAnimBase*>(anim));
 }
 
-// 事件系统实现
-// 使用 vector 保持 (callbackId, EventCallbackInfo) 的有序集合，以支持优先级
-std::map<EOGSEventID, std::map<uint32_t, std::vector<std::pair<uint32_t, EOGSWidgetBase::EventCallbackInfo>>>> EOGSWidgetBase::eventMap;  // 静态事件映射，按事件ID、对象ID和回调向量存储（支持优先级）
-uint32_t EOGSWidgetBase::nextId = 0;  // 初始化nextId
-uint32_t EOGSWidgetBase::nextCallbackId = 0;  // 初始化nextCallbackId
+// EOGSWidgetBase类的静态变量初始化
+uint32_t EOGSWidgetBase::nextId = 0; // 用于生成Widget对象ID
 
-uint32_t EOGSWidgetBase::on(const EOGSEventID event, std::function<void(EOGSEvent*)> callback, bool receivePropagate, int priority) {
-    uint32_t callbackId = nextCallbackId++;
-    auto &vec = eventMap[event][id];
-    vec.emplace_back(callbackId, EventCallbackInfo(callback, receivePropagate, priority));
+EOGSEventListener* EOGSWidgetBase::on(const EOGSEventID event, std::function<void(EOGSEvent*)> callback, bool receivePropagate, int priority) {
+    // 创建新的监听器
+    EOGSEventListener* listener = new EOGSEventListener(callback, receivePropagate, priority);
+    if(listener->id == 0){
+        delete listener;
+        return nullptr;   // 监听器ID为0，说明创建失败
+    }
+    // 添加到事件映射
+    auto &vec = EOGSEvent::eventMap[event][id];
+    vec.push_back(listener);
+    
     // 按 priority 降序排序（优先级越大越先执行）。若优先级相等，保持先插入先执行（stable）
-    std::stable_sort(vec.begin(), vec.end(), [](const std::pair<uint32_t, EventCallbackInfo>& a, const std::pair<uint32_t, EventCallbackInfo>& b){
-        return a.second.priority > b.second.priority;
+    std::stable_sort(vec.begin(), vec.end(), [](const EOGSEventListener* a, const EOGSEventListener* b){
+        return a->priority > b->priority;
     });
-    return callbackId;
+    
+    return listener;
 }
 
 EOGSEvent EOGSWidgetBase::makeTrigger(const EOGSEventID event) {
@@ -182,19 +180,18 @@ void EOGSWidgetBase::trigger(EOGSEvent *event, EOGSEventPropagate propagationMod
     event->self = this;
 
     // 查找事件映射（可能不存在）
-    auto it = eventMap.find(event->eventId);
-    const std::map<uint32_t, std::vector<std::pair<uint32_t, EOGSWidgetBase::EventCallbackInfo>>>* eventEntryPtr = nullptr;
-    if (it != eventMap.end()) eventEntryPtr = &it->second;
+    auto it = EOGSEvent::eventMap.find(event->eventId);
+    const std::map<uint32_t, std::vector<EOGSEventListener*>>* eventEntryPtr = nullptr;
+    if (it != EOGSEvent::eventMap.end()) eventEntryPtr = &it->second;
 
     // 先触发当前对象的回调（如果存在）
     if (eventEntryPtr != nullptr) {
         auto objIt = eventEntryPtr->find(id);
         if (objIt != eventEntryPtr->end()) {
-            // objIt->second is now a vector<pair<callbackId, EventCallbackInfo>>
-            for (const auto& pair : objIt->second) {
-                const EventCallbackInfo &info = pair.second;
-                if (info.receivePropagate) {
-                    info.callback(event);
+            // 触发所有监听器
+            for (EOGSEventListener* listener : objIt->second) {
+                if (listener->receivePropagate) {
+                    listener->callback(event);
                     if (event->wasCancelled()) return;  // 如果事件被取消，停止触发
                 }
             }
@@ -245,28 +242,54 @@ void EOGSWidgetBase::trigger(EOGSEvent *event, EOGSEventPropagate propagationMod
 }
 
 void EOGSWidgetBase::off(const EOGSEventID event) {
-    auto it = eventMap.find(event);
-    if (it == eventMap.end()) return;
+    auto it = EOGSEvent::eventMap.find(event);
+    if (it == EOGSEvent::eventMap.end()) return;
+    
+    // 直接删除所有相关监听器
+    auto objectIt = it->second.find(id);
+    if (objectIt != it->second.end()) {
+        auto &vec = objectIt->second;
+        for (EOGSEventListener* listener : vec) {
+            delete listener;
+        }
+    }
+    
     // 清空当前对象的该事件的所有监听器
     it->second.erase(id);
 }
 
-void EOGSWidgetBase::off(const EOGSEventID event, uint32_t callbackId) {
-    auto it = eventMap.find(event);
-    if (it == eventMap.end()) return;
-    // 清空当前对象的该事件的指定callback的监听器
-    auto& objectCallbacks = it->second;  // std::map<uint32_t, std::vector<pair<uint32_t, EventCallbackInfo>>>
-    auto objectIt = objectCallbacks.find(id);
-    if (objectIt == objectCallbacks.end()) return;
+void EOGSWidgetBase::off(const EOGSEventID event, EOGSEventListener* listener) {
+    if (listener == nullptr) return;
+    
+    auto it = EOGSEvent::eventMap.find(event);
+    if (it == EOGSEvent::eventMap.end()) return;
+    
+    auto objectIt = it->second.find(id);
+    if (objectIt == it->second.end()) return;
+    
     auto &vec = objectIt->second;
-    vec.erase(std::remove_if(vec.begin(), vec.end(), [&](const std::pair<uint32_t, EventCallbackInfo>& p){ return p.first == callbackId; }), vec.end());
+    
+    // 查找并删除指定的监听器
+    vec.erase(std::remove_if(vec.begin(), vec.end(), [listener](EOGSEventListener* l) {
+        if (l == listener) {
+            delete l;
+            return true;
+        }
+        return false;
+    }), vec.end());
 }
 
 void EOGSWidgetBase::off() {
-    for (auto& eventListeners : eventMap) {
+    for (auto& eventListeners : EOGSEvent::eventMap) {
+        // 直接删除所有相关监听器
+        auto objectIt = eventListeners.second.find(id);
+        if (objectIt != eventListeners.second.end()) {
+            auto &vec = objectIt->second;
+            for (EOGSEventListener* listener : vec) {
+                delete listener;
+            }
+        }
         eventListeners.second.erase(id);  // 移除this对象的所有监听器
     }
 }
 
-//事件系统
-EOGSEvent::EOGSEvent(EOGSEventID id) : eventId(id), source(nullptr), self(nullptr), cancelled(false) {}

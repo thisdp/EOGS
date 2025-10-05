@@ -1,4 +1,4 @@
-//
+ //
 // Created by thisdp 2025/8/20.
 // Widget Base for EOGS
 //
@@ -11,59 +11,20 @@
 #include <stdexcept>
 #include <functional>
 #include <map>
+#include "../event/event.h"
 #include "../EOGS_hal/EOGS_hal.h"
 #define mathClamp(x,min,max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
-
-class EOGSWidgetBase;
-
-enum class EOGSEventID : uint32_t {
-    Click = 0,
-};
-
-// 事件传播模式枚举
-enum class EOGSEventPropagate {
-    None,     // 不传播事件
-    Up,     // 向上传播事件
-    Down,   // 向下传播事件
-    Both    // 双向传播事件
-};
-
-// 事件类声明
-class EOGSEvent {   //基础事件类
-public:
-    EOGSEventID eventId;
-    EOGSWidgetBase *source;
-    EOGSWidgetBase *self;
-    bool cancelled;
-    EOGSEvent(EOGSEventID id);
-    void cancel();
-    bool wasCancelled();
-};
 
 // 前向声明
 class EOGS;
 class EOGSAnimBase;
+class EOGSEventListener;
+class EOGSEvent;
 // 基础控件类基类
 class EOGSWidgetBase {
 protected:
-    // 事件回调信息结构体
-    struct EventCallbackInfo {
-        std::function<void(EOGSEvent*)> callback;
-        bool receivePropagate;
-        int priority;
 
-        EventCallbackInfo(std::function<void(EOGSEvent*)> cb, bool prop, int prio = 0) : callback(cb), receivePropagate(prop), priority(prio) {}
-    };
-    
-    /*  结构:
-        [事件ID] = {
-            [对象ID] = [ (callbackId, 回调信息), ... ],
-        },
-    */
-    static std::map<EOGSEventID, std::map<uint32_t, std::vector<std::pair<uint32_t, EventCallbackInfo>>>> eventMap;  // 静态事件映射，按事件ID、对象ID和回调向量存储（支持优先级）
-    static uint32_t nextCallbackId;  // 用于生成回调函数的唯一索引
-    static uint32_t nextId;  // 用于生成唯一ID
-
+    static uint32_t nextId;  // 用于生成Widget对象的唯一ID
     uint32_t id;  // 对象的唯一ID
     EOGSWidgetBase* parent;  // 父级元素指针
     float relX, relY, relW, relH;  // 相对坐标和大小
@@ -206,12 +167,13 @@ public:
 public:
     // 事件系统
     // 增加 priority 参数（越大优先级越高）。在添加时将对该对象的回调按优先级排序
-    uint32_t on(const EOGSEventID event, std::function<void(EOGSEvent*)> callback, bool receivePropagate = true, int priority = 0);  // 自动使用this->id作为objectId，返回回调函数的索引
+    EOGSEventListener* on(const EOGSEventID event, std::function<void(EOGSEvent*)> callback, bool receivePropagate = true, int priority = 0);  // 自动使用this->id作为objectId，返回事件监听器对象指针
     EOGSEvent makeTrigger(const EOGSEventID event);  // 根据事件ID生成事件对象
     void trigger(EOGSEvent* event, EOGSEventPropagate propagationMode = EOGSEventPropagate::None);  // 触发事件，接受事件对象指针
     void off(const EOGSEventID event);  // 移除特定事件的所有监听器
-    void off(const EOGSEventID event, uint32_t callbackId);  // 移除特定事件的指定监听器
+    void off(const EOGSEventID event, EOGSEventListener* listener);  // 移除特定事件的指定监听器
     void off();  // 移除this对象的所有监听器
+    
     // 纯虚函数接口
     virtual void render(EOGS* eogs, int16_t parentRX, int16_t parentRY, int16_t parentW, int16_t parentH) = 0;
     virtual bool updateRenderPos(EOGS* eogs, int16_t parentRX, int16_t parentRY, int16_t parentW, int16_t parentH);   //计算渲染位置
@@ -326,6 +288,9 @@ public:
     virtual Derived* trigger(EOGSEvent* event, EOGSEventPropagate propagationMode = EOGSEventPropagate::None) { EOGSWidgetBase::trigger(event, propagationMode); return static_cast<Derived*>(this); }
     virtual Derived* trigger(EOGSEvent &event, EOGSEventPropagate propagationMode = EOGSEventPropagate::None) { EOGSWidgetBase::trigger(&event, propagationMode); return static_cast<Derived*>(this); }
     virtual Derived* off(const EOGSEventID event) { EOGSWidgetBase::off(event); return static_cast<Derived*>(this); }
-    virtual Derived* off(const EOGSEventID event, uint32_t callbackId) { EOGSWidgetBase::off(event, callbackId); return static_cast<Derived*>(this); }
+    virtual Derived* off(const EOGSEventID event, EOGSEventListener* listener) { EOGSWidgetBase::off(event, listener); return static_cast<Derived*>(this); }
     virtual Derived* off() { EOGSWidgetBase::off(); return static_cast<Derived*>(this); }
+    
+    // 静态方法包装，用于动态事件ID分配
+    static EOGSEventID requestEventID() { return EOGSEvent::requestEventID(); }
 };

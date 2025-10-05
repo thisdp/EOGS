@@ -37,6 +37,7 @@
 void EOGSSwitchButton::onClick(EOGSEvent* event){  //进入此函数，self一定是EOGSSwitchButton
     EOGSSwitchButton *switchButton = static_cast<EOGSSwitchButton*>(event->self);
     switchButton->setState(!switchButton->getState());
+    Serial.println("wtf");
 }
 
 // 构造函数
@@ -65,7 +66,7 @@ EOGSSwitchButton::EOGSSwitchButton(float _x, float _y, float _w, float _h, bool 
     setBgOffFilled(false);
     setIndicatorOnFilled(false);
     setIndicatorOffFilled(false);
-    on(EOGSEventID::Click, onClick);
+    on(EOGSEvent::Click, onClick);
 }
 
 // 更新控件尺寸和位置
