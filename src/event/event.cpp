@@ -1,3 +1,8 @@
+//
+// Created by thisdp 2025/10/5.
+// Event System for EOGS
+//
+
 #include "event.h"
 #include "../widgets/widget.h"
 #include <algorithm>
