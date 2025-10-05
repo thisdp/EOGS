@@ -37,7 +37,6 @@
 void EOGSSwitchButton::onClick(EOGSEvent* event){  //进入此函数，self一定是EOGSSwitchButton
     EOGSSwitchButton *switchButton = static_cast<EOGSSwitchButton*>(event->self);
     switchButton->setState(!switchButton->getState());
-    Serial.println("wtf");
 }
 
 // 构造函数
