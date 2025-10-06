@@ -169,8 +169,7 @@ public:
     // 事件系统
     // 增加 priority 参数（越大优先级越高）。在添加时将对该对象的回调按优先级排序
     EOGSEventListener* on(const EOGSEventID event, std::function<void(EOGSEvent*)> callback, bool receivePropagate = true, int priority = 0);  // 自动使用this->id作为objectId，返回事件监听器对象指针
-    EOGSEvent makeTrigger(const EOGSEventID event);  // 根据事件ID生成事件对象
-    void trigger(EOGSEvent* event, EOGSEventPropagate propagationMode = EOGSEventPropagate::None);  // 触发事件，接受事件对象指针
+    void triggerEvent(EOGSEvent* event, EOGSEventPropagate propagationMode = EOGSEventPropagate::None);  // 触发事件，接受事件对象指针，且triggerEvent函数会在内部改变self指向，但不会改变source指向
     void off(const EOGSEventID event);  // 移除特定事件的所有监听器
     void off(const EOGSEventID event, EOGSEventListener* listener);  // 移除特定事件的指定监听器
     void off();  // 移除this对象的所有监听器
@@ -286,8 +285,8 @@ public:
     virtual Derived* setVisible(bool _visible) { EOGSWidgetBase::setVisible(_visible); return static_cast<Derived*>(this); }
     virtual Derived* setForceRenderOutsideOfCanvas(bool forceRenderOutsideOfCanvas) { EOGSWidgetBase::setForceRenderOutsideOfCanvas(forceRenderOutsideOfCanvas); return static_cast<Derived*>(this); }
     // Chainable event API wrappers (covariant return type)
-    virtual Derived* trigger(EOGSEvent* event, EOGSEventPropagate propagationMode = EOGSEventPropagate::None) { EOGSWidgetBase::trigger(event, propagationMode); return static_cast<Derived*>(this); }
-    virtual Derived* trigger(EOGSEvent &event, EOGSEventPropagate propagationMode = EOGSEventPropagate::None) { EOGSWidgetBase::trigger(&event, propagationMode); return static_cast<Derived*>(this); }
+    virtual Derived* triggerEvent(EOGSEvent* event, EOGSEventPropagate propagationMode = EOGSEventPropagate::None) { EOGSWidgetBase::triggerEvent(event, propagationMode); return static_cast<Derived*>(this); }
+    virtual Derived* triggerEvent(EOGSEvent &event, EOGSEventPropagate propagationMode = EOGSEventPropagate::None) { EOGSWidgetBase::triggerEvent(&event, propagationMode); return static_cast<Derived*>(this); }
     virtual Derived* off(const EOGSEventID event) { EOGSWidgetBase::off(event); return static_cast<Derived*>(this); }
     virtual Derived* off(const EOGSEventID event, EOGSEventListener* listener) { EOGSWidgetBase::off(event, listener); return static_cast<Derived*>(this); }
     virtual Derived* off() { EOGSWidgetBase::off(); return static_cast<Derived*>(this); }

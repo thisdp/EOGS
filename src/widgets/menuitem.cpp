@@ -267,6 +267,7 @@ EOGSMenuSubItem::EOGSMenuSubItem(float _x, float _y, float _w, float _h, bool _i
     setImageAlign(0);       // 水平/垂直对齐
     setEnterable(true);
     setSelectable(true);
+    setUTF8Enabled(true);   //UTF8 默认启用，并且不允许强制更新文本内容
 }
 
 //选中
@@ -281,6 +282,7 @@ EOGSMenuItem* EOGSMenuSubItem::getRootMenuItem() { return parentMenuItem != null
 //核心程序
 void EOGSMenuSubItem::requestTextUpdate(bool instant) {
     textUpdated = false;
+    if(!instant) return;
     updateText(getEOGS());
 }
 bool EOGSMenuSubItem::updateText(EOGS* eogs) {
@@ -436,8 +438,8 @@ EOGSMenuSubItem* EOGSMenuSubItem::setSelectable(bool _isSelectable) {
 const unsigned char* EOGSMenuSubItem::getFont() const { return font; }
 EOGSMenuSubItem* EOGSMenuSubItem::setFont(const unsigned char* _font) {
     font = _font;
-    requestTextUpdate(true);
-    requestSelectAreaUpdate(true);
+    requestTextUpdate();
+    requestSelectAreaUpdate();
     return this;
 }
 //字体透明度
@@ -450,8 +452,8 @@ EOGSMenuSubItem* EOGSMenuSubItem::setFontTransparent(bool _isFontTransparent) {
 const std::string& EOGSMenuSubItem::getText() const { return text; }
 EOGSMenuSubItem* EOGSMenuSubItem::setText(const std::string& _text) {
     text = _text;
-    requestTextUpdate(true);
-    requestSelectAreaUpdate(true);
+    requestTextUpdate();
+    requestSelectAreaUpdate();
     return this;
 }
 //UTF8标记
@@ -459,7 +461,7 @@ bool EOGSMenuSubItem::getUTF8Enabled() const { return isUTF8; }
 EOGSMenuSubItem* EOGSMenuSubItem::setUTF8Enabled(bool enabled) { 
     isUTF8 = enabled;
     requestTextUpdate();  // UTF8标记改变后需要重新计算文本大小
-    requestSelectAreaUpdate(true);
+    requestSelectAreaUpdate();
     return this;
 }
 //颜色
@@ -484,32 +486,32 @@ EOGSMenuSubItem* EOGSMenuSubItem::setScroll(bool _scroll){
 uint8_t EOGSMenuSubItem::getTextAlign() const { return textAlign; }
 EOGSMenuSubItem* EOGSMenuSubItem::setTextAlign(uint8_t align) {
     textAlign = align;
-    requestTextAlignUpdate(true);
-    requestSelectAreaUpdate(true);
+    requestTextAlignUpdate();
+    requestSelectAreaUpdate();
     return this;
 }
 //填充
 int16_t EOGSMenuSubItem::getPaddingLeftText() const { return paddingLeftOrTopText; }
 EOGSMenuSubItem* EOGSMenuSubItem::setPaddingLeftText(int16_t padding) {
     paddingLeftOrTopText = padding;
-    requestTextAlignUpdate(true);
-    requestSelectAreaUpdate(true);
+    requestTextAlignUpdate();
+    requestSelectAreaUpdate();
     return this;
 }
 
 int16_t EOGSMenuSubItem::getPaddingRightText() const { return paddingRightOrBottomText; }
 EOGSMenuSubItem* EOGSMenuSubItem::setPaddingRightText(int16_t padding) {
     paddingRightOrBottomText = padding;
-    requestTextAlignUpdate(true);
-    requestSelectAreaUpdate(true);
+    requestTextAlignUpdate();
+    requestSelectAreaUpdate();
     return this;
 }
 
 EOGSMenuSubItem* EOGSMenuSubItem::setTextPadding(int16_t left, int16_t right){
     paddingLeftOrTopText = left;
     paddingRightOrBottomText = right;
-    requestTextAlignUpdate(true);
-    requestSelectAreaUpdate(true);
+    requestTextAlignUpdate();
+    requestSelectAreaUpdate();
     return this;
 }
 /*********文本方法 结束*********/
@@ -518,8 +520,8 @@ EOGSMenuSubItem* EOGSMenuSubItem::setTextPadding(int16_t left, int16_t right){
 const unsigned char* EOGSMenuSubItem::getImage() const { return image; }
 EOGSMenuSubItem* EOGSMenuSubItem::setImage(const unsigned char* _image, int16_t _imageW, int16_t _imageH) {
     image = _image; imageW = _imageW; imageH = _imageH;
-    requestImageAlignUpdate(true);
-    requestSelectAreaUpdate(true);
+    requestImageAlignUpdate();
+    requestSelectAreaUpdate();
     return this;
 }
 //颜色
@@ -532,48 +534,48 @@ EOGSMenuSubItem* EOGSMenuSubItem::setSelectedImageColor(DrawColor color) { selec
 uint8_t EOGSMenuSubItem::getImageAlign() const { return imageAlign; }
 EOGSMenuSubItem* EOGSMenuSubItem::setImageAlign(uint8_t align) {
     imageAlign = align;
-    requestImageAlignUpdate(true);
-    requestSelectAreaUpdate(true);
+    requestImageAlignUpdate();
+    requestSelectAreaUpdate();
     return this;
 }
 //填充
 int16_t EOGSMenuSubItem::getPaddingLeftImage() const { return paddingLeftOrTopImage; }
 EOGSMenuSubItem* EOGSMenuSubItem::setPaddingLeftImage(int16_t padding) {
     paddingLeftOrTopImage = padding;
-    requestImageAlignUpdate(true);
-    requestSelectAreaUpdate(true);
+    requestImageAlignUpdate();
+    requestSelectAreaUpdate();
     return this;
 }
 
 int16_t EOGSMenuSubItem::getPaddingRightImage() const { return paddingRightOrBottomImage; }
 EOGSMenuSubItem* EOGSMenuSubItem::setPaddingRightImage(int16_t padding) {
     paddingRightOrBottomImage = padding;
-    requestImageAlignUpdate(true);
-    requestSelectAreaUpdate(true);
+    requestImageAlignUpdate();
+    requestSelectAreaUpdate();
     return this;
 }
 
 EOGSMenuSubItem* EOGSMenuSubItem::setImagePadding(int16_t left, int16_t right) {
     paddingLeftOrTopImage = left;
     paddingRightOrBottomImage = right;
-    requestImageAlignUpdate(true);
-    requestSelectAreaUpdate(true);
+    requestImageAlignUpdate();
+    requestSelectAreaUpdate();
     return this;
 }
 //宽高
 int16_t EOGSMenuSubItem::getImageW() const { return imageW; }
 EOGSMenuSubItem* EOGSMenuSubItem::setImageW(int16_t _imageW) {
     imageW = _imageW;
-    requestImageAlignUpdate(true);
-    requestSelectAreaUpdate(true);
+    requestImageAlignUpdate();
+    requestSelectAreaUpdate();
     return this;
 }
 
 int16_t EOGSMenuSubItem::getImageH() const { return imageH; }
 EOGSMenuSubItem* EOGSMenuSubItem::setImageH(int16_t _imageH) {
     imageH = _imageH;
-    requestImageAlignUpdate(true);
-    requestSelectAreaUpdate(true);
+    requestImageAlignUpdate();
+    requestSelectAreaUpdate();
     return this;
 }
 /*********图像方法 结束*********/

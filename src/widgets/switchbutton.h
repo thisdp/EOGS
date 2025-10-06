@@ -56,7 +56,7 @@ protected:
 
 public:
     // 静态函数
-    static void onClick(EOGSEvent* event);  //进入此函数，self一定是EOGSSwitchButton
+    static void onConfirm(EOGSEvent* event);  //进入此函数，self一定是EOGSSwitchButton
     
     // 构造函数
     EOGSSwitchButton(float _x, float _y, float _w, float _h, bool _isRelative = false);

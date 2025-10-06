@@ -22,13 +22,14 @@
 // 简化构造函数，使用统一的相对标志
 EOGSLabel::EOGSLabel(float _x, float _y, float _w, float _h, bool _isRelative, const std::string& _text)
     : EOGSWidget<EOGSLabel>(_x, _y, _w, _h, _isRelative),
-      text(_text), font(0){
+      text(_text), font(nullptr){
         setFontTransparent(true);
         setHAlign(HAlign::LEFT);
         setVAlign(VAlign::TOP);
         setScroll(false);   // 当字体超出边界后默认不滚动
         setClip(false); // 默认不剪裁
         setColor(DrawColor::WHITE);
+        setUTF8Enabled(true);   //UTF8 默认启用，并且不允许强制更新文本内容
     }
 
 // 更新控件尺寸和位置
@@ -71,6 +72,7 @@ bool EOGSLabel::updateTextAlign(){
 
 void EOGSLabel::requestTextUpdate(bool instant) {
     textUpdated = false;
+    if(!instant) return;
     updateText(getEOGS());
 }
 bool EOGSLabel::updateText(EOGS* eogs) {

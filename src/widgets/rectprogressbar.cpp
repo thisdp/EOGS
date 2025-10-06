@@ -121,19 +121,27 @@ EOGSRectProgressBar* EOGSRectProgressBar::setProgress(float val) {
     // 使指示器缓存无效
     requestIndicatorDimensionUpdate();
     if (percentageLabel != nullptr && oldProgress != progress) {
-        std::string text;
-        if (textFormat) {
-            // 使用自定义格式化函数
-            text = textFormat(progress, minProgress, maxProgress);
-        } else {
-            // 默认格式化为百分比
-            float progressBase = maxProgress - minProgress;
-            float normalizedProgress = progressBase == 0 ? 0 : (progress - minProgress) / progressBase;
-            int percentage = static_cast<int>(normalizedProgress * 100);
-            text = std::to_string(percentage) + "%";
-        }
-        percentageLabel->setText(text);
+        updateProgressText();
     }
+    EOGSEventProgressChange event(this);
+    event.oldProgress = oldProgress;
+    triggerEvent(event);
+    return this;
+}
+EOGSRectProgressBar* EOGSRectProgressBar::updateProgressText(){
+    if(percentageLabel == nullptr) return this;
+    std::string text;
+    if (textFormat) {
+        // 使用自定义格式化函数
+        text = textFormat(progress, minProgress, maxProgress);
+    } else {
+        // 默认格式化为百分比
+        float progressBase = maxProgress - minProgress;
+        float normalizedProgress = progressBase == 0 ? 0 : (progress - minProgress) / progressBase;
+        int percentage = static_cast<int>(normalizedProgress * 100);
+        text = std::to_string(percentage) + "%";
+    }
+    percentageLabel->setText(text);
     return this;
 }
 EOGSRectProgressBar* EOGSRectProgressBar::setBorderColor(DrawColor color) { borderColor = color; return this; }
@@ -149,6 +157,7 @@ EOGSRectProgressBar* EOGSRectProgressBar::setPercentageTextEnabled(bool show) {
         percentageLabel->setHAlign(HAlign::CENTER);
         percentageLabel->setVAlign(VAlign::CENTER);
         percentageLabel->setForceRenderOutsideOfCanvas(true);
+        updateProgressText();
     } else if (!show) {
         if(percentageLabel == nullptr) return this;
         delete percentageLabel;

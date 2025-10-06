@@ -168,15 +168,9 @@ EOGSEventListener* EOGSWidgetBase::on(const EOGSEventID event, std::function<voi
     return listener;
 }
 
-EOGSEvent EOGSWidgetBase::makeTrigger(const EOGSEventID event) {
-    EOGSEvent ev(event);
-    ev.source = this;
-    ev.self = this;
-    return ev;
-}
-
-void EOGSWidgetBase::trigger(EOGSEvent *event, EOGSEventPropagate propagationMode) {
+void EOGSWidgetBase::triggerEvent(EOGSEvent *event, EOGSEventPropagate propagationMode) {
     if (event == nullptr) return;
+    if (event->source == nullptr) return;   //source 不能为nullptr
     event->self = this;
 
     // 查找事件映射（可能不存在）
@@ -209,7 +203,7 @@ void EOGSWidgetBase::trigger(EOGSEvent *event, EOGSEventPropagate propagationMod
             if (children == nullptr) return;
             for (EOGSWidgetBase* child : *children) {
                 if (child != nullptr){
-                    child->trigger(event, EOGSEventPropagate::Down);
+                    child->triggerEvent(event, EOGSEventPropagate::Down);
                 }
             }
             break;
@@ -217,21 +211,21 @@ void EOGSWidgetBase::trigger(EOGSEvent *event, EOGSEventPropagate propagationMod
         case EOGSEventPropagate::Up: {
             // 向上传播事件
             if (parent != nullptr) {
-                parent->trigger(event, EOGSEventPropagate::Up);
+                parent->triggerEvent(event, EOGSEventPropagate::Up);
             }
             break;
         }
         case EOGSEventPropagate::Both: {
             // 双向传播事件：先向上传播，再向下传播
             if (parent != nullptr) {
-                parent->trigger(event, EOGSEventPropagate::Up);
+                parent->triggerEvent(event, EOGSEventPropagate::Up);
             }
             if (!isContainer()) return;
             std::vector<EOGSWidgetBase*>* children = getChildren();
             if (children == nullptr) return;
             for (EOGSWidgetBase* child : *children) {
                 if (child != nullptr){
-                    child->trigger(event, EOGSEventPropagate::Down);
+                    child->triggerEvent(event, EOGSEventPropagate::Down);
                 }
             }
             break;

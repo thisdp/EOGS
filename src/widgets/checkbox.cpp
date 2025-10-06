@@ -16,7 +16,7 @@
 #define checkMarkColor generalColor6
 
 // 静态函数
-void EOGSCheckBox::onClick(EOGSEvent* event){  //进入此函数，self一定是EOGSCheckBox
+void EOGSCheckBox::onConfirm(EOGSEvent* event){  //进入此函数，self一定是EOGSCheckBox
     EOGSCheckBox *checkBox = static_cast<EOGSCheckBox*>(event->self);
     checkBox->setChecked(!checkBox->getChecked());
 }
@@ -39,7 +39,7 @@ EOGSCheckBox::EOGSCheckBox(float _x, float _y, float _w, float _h, bool _isRelat
     setCheckMarkColor(DrawColor::WHITE);
     setChecked(false);
     setSquare(true);  // 默认为正方形
-    on(EOGSEvent::Click, onClick);
+    on(EOGSEvent::Confirm, onConfirm);
 }
 
 // 更新控件尺寸和位置

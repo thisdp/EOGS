@@ -34,7 +34,7 @@
 #define bgColorOff generalColor20
 
 // 静态函数
-void EOGSSwitchButton::onClick(EOGSEvent* event){  //进入此函数，self一定是EOGSSwitchButton
+void EOGSSwitchButton::onConfirm(EOGSEvent* event){  //进入此函数，self一定是EOGSSwitchButton
     EOGSSwitchButton *switchButton = static_cast<EOGSSwitchButton*>(event->self);
     switchButton->setState(!switchButton->getState());
 }
@@ -65,7 +65,7 @@ EOGSSwitchButton::EOGSSwitchButton(float _x, float _y, float _w, float _h, bool 
     setBgOffFilled(false);
     setIndicatorOnFilled(false);
     setIndicatorOffFilled(false);
-    on(EOGSEvent::Click, onClick);
+    on(EOGSEvent::Confirm, onConfirm);
 }
 
 // 更新控件尺寸和位置

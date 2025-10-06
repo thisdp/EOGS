@@ -62,6 +62,7 @@ EOGSEventListenerID EOGSEventListener::getNextAvailableListenerId() {
 
 //事件系统
 EOGSEvent::EOGSEvent(EOGSEventID id) : eventId(id), cancelled(false) , source(nullptr), self(nullptr){}
+EOGSEvent::EOGSEvent(EOGSEventID id, EOGSWidgetBase *_source) : eventId(id), cancelled(false) , source(_source), self(nullptr){}
 
 void EOGSEvent::cancel() {
     cancelled = true;
@@ -75,3 +76,13 @@ bool EOGSEvent::wasCancelled() {
 EOGSEventID EOGSEvent::requestEventID() {
     return nextEventId++;
 }
+
+void EOGSEvent::makeTrigger(EOGSWidgetBase *_source) {
+    source = _source;
+}
+
+//------------------EOGSEventConfirm
+EOGSEventConfirm::EOGSEventConfirm(EOGSWidgetBase *src) : EOGSEvent(EOGSEventConfirm::EventID, src) {}
+
+//------------------EOGSEventProgressChange
+EOGSEventProgressChange::EOGSEventProgressChange(EOGSWidgetBase *src) : EOGSEvent(EOGSEventProgressChange::EventID, src) {}

@@ -16,7 +16,7 @@ EOGSRadioButton::EOGSRadioButton(float _x, float _y, float _w, float _h, bool _i
       group(nullptr) {
     setOuterCircleColor(DrawColor::WHITE);
     setInnerCircleColor(DrawColor::WHITE);
-    on(EOGSEvent::Click, onClick);
+    on(EOGSEvent::Confirm, onConfirm);
 }
 
 EOGSRadioButton::~EOGSRadioButton() {
@@ -124,7 +124,7 @@ int16_t EOGSRadioButton::getCircleRadius() const { return static_cast<int16_t>(o
 int16_t EOGSRadioButton::getInnerCircleRadius() const { return static_cast<int16_t>(innerRadius); }
 
 // 静态函数
-void EOGSRadioButton::onClick(EOGSEvent* event){  //EOGSRadioButton
+void EOGSRadioButton::onConfirm(EOGSEvent* event){  //EOGSRadioButton
     EOGSRadioButton *switchButton = static_cast<EOGSRadioButton*>(event->self);
     switchButton->setChecked(true);
 }

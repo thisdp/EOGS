@@ -33,7 +33,7 @@ protected:
 
 public:
     // 静态函数
-    static void onClick(EOGSEvent* event);  //进入此函数，self一定是EOGSCheckBox
+    static void onConfirm(EOGSEvent* event);  //进入此函数，self一定是EOGSCheckBox
     
     // 构造函数
     EOGSCheckBox(float _x, float _y, float _w, float _h, bool _isRelative = false);

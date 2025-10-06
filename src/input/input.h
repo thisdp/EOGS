@@ -82,22 +82,25 @@ public: //事件
     using EventOnPress = void(*)(EOGSDigitalButton* theButton, uint16_t pressTimes);
     using EventOnRelease = void(*)(EOGSDigitalButton* theButton, uint16_t releaseTimes);
     using EventOnHold = void(*)(EOGSDigitalButton* theButton);
-    using EventOnHolding = void(*)(EOGSDigitalButton* theButton, uint16_t holdingTime);
+    using EventOnHolding = void(*)(EOGSDigitalButton* theButton, uint32_t holdingTime);
 
 protected:
     uint32_t pressStartTime;// 按下开始时间
+    uint32_t holdingLastTime;   // 上一次按住触发间隔
     uint16_t clickCount;    // 连续点击次数
     uint16_t clickInterval; // 点击间隔
     uint16_t holdThreshold;   // 按住持续时间
+    uint16_t holdingTriggerInterval;
     uint8_t holdTriggered : 1;
     uint8_t reserved:7;
 public:
-    EOGSDigitalButton(EOGS_MCU &eogsHAL, uint16_t _clickInterval = 500, uint16_t _holdThreshold = 1000)
+    EOGSDigitalButton(EOGS_MCU &eogsHAL, uint16_t _clickInterval = 500, uint16_t _holdThreshold = 500, uint16_t _holdingTriggerInterval = 100)
         : EOGSDigitalInput(eogsHAL),
           pressStartTime(0),
           clickCount(0),
           clickInterval(_clickInterval),
           holdThreshold(_holdThreshold),
+          holdingTriggerInterval(_holdingTriggerInterval),
           holdTriggered(false),
           reserved(0) {}
     void update(bool inputState) {
@@ -108,13 +111,17 @@ public:
                 uint32_t ms = hal->millis();
                 if(ms - pressStartTime >= holdThreshold){
                     holdTriggered = true;
+                    holdingLastTime = ms;   //记录触发时间
                     if(onHold) onHold(this);
                 }
             }
             if(holdTriggered){
                 if(onHolding){
                     uint32_t ms = hal->millis();
-                    onHolding(this,ms-pressStartTime);
+                    if(ms-holdingLastTime >= holdingTriggerInterval){ 
+                        holdingLastTime += holdingTriggerInterval;
+                        onHolding(this,ms-pressStartTime);
+                    }
                 }
             }
         }

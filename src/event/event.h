@@ -45,8 +45,9 @@ public:
 // 事件类声明
 class EOGSEvent {   //基础事件类
 public: // 预定义事件
-    static constexpr EOGSEventID Click = 0;
-    static constexpr EOGSEventID EventEnd = 1;
+    static constexpr EOGSEventID Confirm = 0;           //EOGSEventConfirm
+    static constexpr EOGSEventID ProgressChange = 1;
+    static constexpr EOGSEventID EventEnd = 10;
     // 静态变量用于事件相关的ID分配
     static EOGSEventID nextEventId;  // 用于生成动态事件ID
     /*  结构:
@@ -65,7 +66,23 @@ public:
     EOGSWidgetBase *source;
     EOGSWidgetBase *self;
     EOGSEvent(EOGSEventID id);
+    EOGSEvent(EOGSEventID id, EOGSWidgetBase *_source);
     void cancel();
     bool wasCancelled();
-    
+    void makeTrigger(EOGSWidgetBase *_source);
+};
+
+class EOGSEventConfirm : public EOGSEvent {   // 确认类事件
+public:
+    static constexpr EOGSEventID EventID = EOGSEvent::Confirm;
+public:
+    EOGSEventConfirm(EOGSWidgetBase *src = nullptr);
+};
+
+class EOGSEventProgressChange : public EOGSEvent {   //进度事件类
+public:
+    static constexpr EOGSEventID EventID = EOGSEvent::ProgressChange;
+public:
+    EOGSEventProgressChange(EOGSWidgetBase *src = nullptr);
+    uint16_t oldProgress;
 };

@@ -39,7 +39,7 @@ protected:
 
 public:
     // 静态函数
-    static void onClick(EOGSEvent* event);
+    static void onConfirm(EOGSEvent* event);
     // 构造函数
     EOGSRadioButton(float _x, float _y, float _w, float _h, bool _isRelative = false);
 

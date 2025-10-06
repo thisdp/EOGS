@@ -64,6 +64,7 @@ public:
     EOGSRectProgressBar* setBorderFilled(bool filled);
     EOGSRectProgressBar* setIndicatorFilled(bool filled);
     EOGSRectProgressBar* setPercentageTextEnabled(bool show);
+    EOGSRectProgressBar* updateProgressText();
 
     EOGSLabel* getPercentageLabel() const;
     EOGSRectProgressBar* setBorderRadius(uint8_t radius);
