@@ -89,6 +89,47 @@ EOGS(EOGS_HAL& _hal, int16_t scrWidth, int16_t scrHeight, uint32_t targetFPS = 0
 
 U8G2硬件抽象层实现，用于与U8g2库配合使用。
 
+### EOGS_HAL类
+
+硬件抽象层基类，为不同硬件平台提供统一接口。
+
+#### 主要方法
+- `virtual void drawPixel(int16_t x, int16_t y)` - 绘制像素点
+- `virtual void drawText(int16_t x, int16_t y, const std::string &text)` - 绘制文本
+- `virtual void drawBox(int16_t x, int16_t y, int16_t w, int16_t h)` - 绘制填充矩形
+- `virtual void drawFrame(int16_t x, int16_t y, int16_t w, int16_t h)` - 绘制矩形框
+- `virtual void drawCircle(int16_t x, int16_t y, int16_t r)` - 绘制圆形
+- `virtual void drawDisc(int16_t x, int16_t y, int16_t r)` - 绘制填充圆形
+- `virtual void drawLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2)` - 绘制线条
+- `virtual void setDrawColor(uint8_t _type)` - 设置绘制颜色
+- `virtual void canvasUpdate()` - 更新显示
+- `virtual void canvasClear()` - 清除画布
+
+### 自定义HAL实现
+
+要为其他显示驱动程序创建自定义HAL实现，需要继承EOGS_HAL类并实现所有纯虚函数。以下是一个基本框架：
+
+```cpp
+class Custom_EOGS_HAL : public EOGS_HAL {
+public:
+    Custom_EOGS_HAL(CustomDisplayDriver& driver) : displayDriver(driver) {}
+    
+    // 实现所有必需的虚函数
+    void drawPixel(int16_t x, int16_t y) override {
+        // 使用自定义驱动程序绘制像素点
+    }
+    
+    void drawText(int16_t x, int16_t y, const std::string &text) override {
+        // 使用自定义驱动程序绘制文本
+    }
+    
+    // ... 其他函数的实现
+    
+private:
+    CustomDisplayDriver& displayDriver;
+};
+```
+
 ## 控件系统
 
 ### 基础控件类 (EOGSWidgetBase)
