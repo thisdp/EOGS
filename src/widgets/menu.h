@@ -20,8 +20,6 @@ public:
     static constexpr bool ScrollBarRefViewOffset = 0;
     static constexpr bool ScrollBarRefSelectIndex = 1;
 protected:
-    //默认设置
-    const unsigned char* font;                // 字体
     //需要内存填充
     DrawColor textColor : 2;                  // 文本颜色(默认)
     DrawColor selectedTextColor : 2;          // 选中文本颜色(默认)

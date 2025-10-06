@@ -32,7 +32,7 @@
 #define isSelectable generalFlag17
 
 EOGSMenuItem::EOGSMenuItem(float _x, float _y, float _w, float _h, bool _isRelative)
-    : EOGSWidget<EOGSMenuItem>(_x, _y, _w, _h, _isRelative),
+    : EOGSWidget<EOGSMenuItem>(_x, _y, _w, _h, _isRelative), font(nullptr),
     selectedIndex(-1), topViewIndex(0), bottomViewIndex(0), viewOffset(0),
     paddingLeftOrTop(2), paddingRightOrBottom(2){}
 
@@ -251,7 +251,7 @@ std::pair<int16_t, int16_t> EOGSMenuItem::findVisibleItem() {
 EOGSMenuSubItem::EOGSMenuSubItem(float _x, float _y, float _w, float _h, bool _isRelative, const std::string& _text)
     : EOGSMenuItem(_x, _y, _w, _h, _isRelative),
       parentMenuItem(nullptr),
-      text(_text), font(0),
+      text(_text),
       textX(0), textY(0), textW(0), textH(0),
       image(nullptr), imageX(0), imageY(0),
       imageW(0), imageH(0), selectedX(0), selectedW(0),

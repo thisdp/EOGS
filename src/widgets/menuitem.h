@@ -46,6 +46,8 @@ class EOGSMenuItem : public EOGSWidget<EOGSMenuItem> {
 protected:
     std::vector<EOGSMenuItem*> childMenuItems; // 子菜单项列表（菜单系统中的childrenItem）
     std::vector<EOGSWidgetBase*> children;  // 子级元素列表
+    //默认设置
+    const unsigned char* font;                // 字体
     //菜单上下文
     int16_t selectedIndex;      // 当前选中的项索引，动画由menu完成
     int16_t previousSelectedIndex;
@@ -148,7 +150,6 @@ class EOGSMenuSubItem : public EOGSMenuItem {
 protected:
     EOGSMenuItem* parentMenuItem;         // 父菜单项（菜单系统中的parentItem）
     std::string text;                     // 文本内容（轻量级实现）
-    const unsigned char* font;            // 字体
     int16_t textX, textY;                 // 文本渲染坐标
     int16_t textW, textH;                 // 文本宽度高
     const unsigned char* image;           // 图像数据
@@ -265,6 +266,7 @@ template<typename... Args>
 EOGSMenuSubItem* EOGSMenuItem::createSubItem(Args&&... args) {
     EOGSMenuSubItem* item = new EOGSMenuSubItem(0,0,1,1,true,std::forward<Args>(args)...);
     addChildMenuItem(static_cast<EOGSMenuItem*>(item));
+    item->setFont(font);   // Inherit font from parent
     item->requestDimensionUpdate(true); //Force Update
     item->requestRenderPosUpdate(true); //Force Update
     item->requestTextUpdate(true);  //Force Update Text

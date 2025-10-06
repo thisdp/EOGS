@@ -8,7 +8,6 @@ inline int16_t fastMod(int16_t x, int16_t a) {
 // 构造函数
 EOGSMenu::EOGSMenu(float _x, float _y, float _w, float _h, bool _isRelative)
     : EOGSMenuItem(_x, _y, _w, _h, _isRelative),
-      font(0),
       textColor(DrawColor::WHITE), selectedTextColor(DrawColor::BLACK),
       imageColor(DrawColor::WHITE),selectedImageColor(DrawColor::WHITE),
       selectedBackgroundColor(DrawColor::WHITE),
